@@ -9,6 +9,9 @@
 #define LEFT_CLICK_KEY_CODE  0x01
 #define RIGHT_CLICK_KEY_CODE 0x02
 
+#define U64(x) (x##ULL)
+#define GET_FIST_SET_BIT(x) (Platform::getFirstSetBit(x))
+
 namespace Platform {
 
 enum TexID {
@@ -92,9 +95,11 @@ void renderFont(const char* text, int x, int y, FontType f, Color c);
 void clear(void);
 void present(void);
 
+void playSound(SoundType st);
+
 void getWindowDimention(int *width, int *height);
 
-void playSound(SoundType st);
+int getFirstSetBit(u64 b);
    
 } // namespace Platform
 

@@ -137,7 +137,7 @@ void Chess::getFen(Board *board) {
 
 Piece Chess::getPieceAt(Board *board, Square square) {
 
-    BitBoard mask = U64(1) << GET_INDEX(square.rank, square.file);
+    BitBoard mask = U64(1) << GET_INDEX_FROM_SQUARE(square.rank, square.file);
 
     if (board->wOccupied & mask) {
 
@@ -164,7 +164,7 @@ Piece Chess::getPieceAt(Board *board, Square square) {
 
 void Chess::setPiece(Board *board, Square square, Piece piece) {
 
-    BitBoard mask = U64(1) << GET_INDEX(square.rank, square.file);
+    BitBoard mask = U64(1) << GET_INDEX_FROM_SQUARE(square.rank, square.file);
     
     // TODO(Tejas): add invalid piece handling
 
@@ -197,7 +197,7 @@ void Chess::setPiece(Board *board, Square square, Piece piece) {
 
 void Chess::removePiece(Board *board, Square square) {
 
-    BitBoard mask = ~(U64(1) << GET_INDEX(square.rank, square.file));
+    BitBoard mask = ~(U64(1) << GET_INDEX_FROM_SQUARE(square.rank, square.file));
 
     board->wPawn   &= mask; board->bPawn   &= mask;
     board->wKnight &= mask; board->bKnight &= mask;

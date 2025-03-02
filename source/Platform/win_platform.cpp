@@ -553,3 +553,14 @@ void Platform::getWindowDimention(int *width, int *height) {
     *width = G_window.width;
     *height = G_window.height;
 }
+
+int Platform::getFirstSetBit(u64 b) {
+
+    for (int i = 0; i < 64; i++) {
+        if (b & (U64(1) << i)) {
+            return i;
+        }
+    }
+
+    return -1;
+}

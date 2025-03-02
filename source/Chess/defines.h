@@ -10,11 +10,11 @@
 #define MAX_FILE 8
 #define MAX_RANK 8
 
-#define U64(x) x##ULL
-#define GET_INDEX(rank, file) ((rank) * (MAX_FILE) + (file))
-
 #define PIECE_COUNT 6
 #define COLOR_COUNT 2
+
+#define GET_INDEX_FROM_SQUARE(rank, file) ((rank) * (MAX_FILE) + (file))
+#define GET_SQUARE_FROM_INDEX(index)      (Square {((index) / (MAX_RANK)), ((index) % (MAX_FILE))})
 
 namespace Chess {
 

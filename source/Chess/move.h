@@ -26,7 +26,13 @@ struct Move {
 
 void move(Board *board, Move move);
 
-BitBoard getLegalMoves(Board *board, Square square, Piece piece);
+BitBoard getValidSquares(Board *board, Square square, Piece piece);
+BitBoard getAttackingSquares(Board *board, Player player);
+
+Square getKingPosition(Board *board, Player player);
+
+bool isInCheck(Board *board, Player player);
+bool isCheckMate(Board *board, Player player);
 
 } // namespace Chess
 

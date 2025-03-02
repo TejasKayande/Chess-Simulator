@@ -33,7 +33,7 @@ internal void fillSquare(Square square, Color color, bool is_flipped) {
     Platform::fillRect(x, y, SQUARE_SIZE, SQUARE_SIZE, color);
 }
 
-internal void renderPiece(Square square, Piece piece, bool is_flipped) {
+internal void renderPieceOnSquare(Square square, Piece piece, bool is_flipped) {
 
     if (is_flipped) {
         square.rank = (MAX_RANK - 1) - square.rank;
@@ -45,6 +45,26 @@ internal void renderPiece(Square square, Piece piece, bool is_flipped) {
 
     if (piece.type != Piece::NO_PIECE)
         Platform::renderTexture(x, y, G_textures[piece.color - 1][piece.type - 1]);
+}
+
+internal void renderPieceOnMouse(int mousex, int mousey, Piece piece) {
+    
+    int width, height;
+    Platform::getWindowDimention(&width, &height);
+
+    int x = mousex;
+    int y = mousey;
+
+    x = MIN(width - (TEXTURE_DIM / 2), x);
+    y = MIN(height - (TEXTURE_DIM / 2), y);
+
+    x = MAX(0, x);
+    y = MAX(0, y);
+
+    x -= TEXTURE_DIM / 2;
+    y -= TEXTURE_DIM / 2;
+
+    Platform::renderTexture(x, y, G_textures[piece.color - 1][piece.type - 1]);
 }
 
 internal void renderRankCoord(Square s, bool is_flipped) {
@@ -90,7 +110,12 @@ internal void renderFileCoord(Square s, bool is_flipped) {
     Platform::renderFont(b, x, y, FontType::VERY_SMALL, c);
 }
 
+
+
 void renderBoard(Board *board, VisualSetting &vs) {
+
+    bool isCheck    = Chess::isInCheck(board, board->turn);
+    Square king_pos = getKingPosition(board, board->turn);
 
     for (int rank = 0; rank < MAX_RANK; rank++) {
 
@@ -104,18 +129,21 @@ void renderBoard(Board *board, VisualSetting &vs) {
                 fillSquare(current_square, vs.theme.dark, vs.is_board_flipped);
             }
 
-            Chess::BitBoard mask = U64(1) << GET_INDEX(rank, file);
-
-            if (vs.legal_squares & mask) {
+            Chess::BitBoard mask = U64(1) << GET_INDEX_FROM_SQUARE(rank, file);
+            if (vs.legal_squares & mask)
                 fillSquare(current_square, vs.theme.legal, vs.is_board_flipped);
-            }
 
             if (vs.selected_square == current_square)
                 fillSquare(vs.selected_square, vs.theme.high, vs.is_board_flipped);
 
+            
             Piece piece = getPieceAt(board, current_square);
+
+            if (isCheck && piece == Piece { PType::KING, board->turn })
+                fillSquare(king_pos, 0x99FF0000, vs.is_board_flipped);
+
             if (vs.selected_square != current_square)
-                renderPiece(current_square, piece, vs.is_board_flipped);
+                renderPieceOnSquare(current_square, piece, vs.is_board_flipped);
         }
     }
 
@@ -126,25 +154,20 @@ void renderBoard(Board *board, VisualSetting &vs) {
 
     // NOTE(Tejas): the selected piece follows the cursor around
     if (vs.selected_square != OFF_SQUARE) {
-
-        int width, height;
-        Platform::getWindowDimention(&width, &height);
-
-        int x = vs.mousex;
-        int y = vs.mousey;
-
-        x = MIN(width - (TEXTURE_DIM / 2), x);
-        y = MIN(height - (TEXTURE_DIM / 2), y);
-
-        x = MAX(0, x);
-        y = MAX(0, y);
-
-        x -= TEXTURE_DIM / 2;
-        y -= TEXTURE_DIM / 2;
-
         Piece piece = getPieceAt(board, vs.selected_square);
-        Platform::renderTexture(x, y, G_textures[piece.color - 1][piece.type - 1]);
+        renderPieceOnMouse(vs.mousex, vs.mousey, piece);
     }
+
+    // BitBoard b = Chess::getAttackingSquares(board, board->turn);
+
+    // for (int index = 0; index < 64; index++) {
+
+    //     BitBoard mask = U64(1) << index;
+    //     if (mask & b) {
+    //         Square square = { index / MAX_RANK, index % MAX_FILE };
+    //         fillSquare(square, 0x99FF0000, vs.is_board_flipped);
+    //     }
+    // }
 }
 
 Square pixelToBoard(int x, int y, bool is_flipped) {

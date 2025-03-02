@@ -1,4 +1,6 @@
 
+#include <vld.h>
+
 #include "Platform/platform.h"
 #include "Chess/chess.h"
 
@@ -8,7 +10,9 @@ global Chess::Board   *G_board;
 global Platform::Event G_event;
 global VisualSetting   G_vs;
 
-internal void handleMouse(void) {
+internal bool handleMouse(void) {
+
+    bool was_a_mouse_event = false;
 
     switch (G_event.mouse.type) {
 
@@ -16,6 +20,10 @@ internal void handleMouse(void) {
 
         G_vs.selected_square = Chess::OFF_SQUARE;
         G_vs.legal_squares = U64(0);
+
+        was_a_mouse_event = true;
+
+        Chess::isCheckMate(G_board, G_board->turn);
 
     } break;
 
@@ -30,9 +38,11 @@ internal void handleMouse(void) {
         Chess::Piece  piece = Chess::getPieceAt(G_board, clicked_square);
         if (piece.color == G_board->turn) {
             G_vs.selected_square = clicked_square;   
-            Chess::BitBoard legal_moves = Chess::getLegalMoves(G_board, G_vs.selected_square, piece);
+            Chess::BitBoard legal_moves = Chess::getValidSquares(G_board, G_vs.selected_square, piece);
             G_vs.legal_squares = legal_moves;
         }
+
+        was_a_mouse_event = true;
 
     } break;
 
@@ -48,7 +58,7 @@ internal void handleMouse(void) {
         move.from   = G_vs.selected_square;
         move.to     = clicked_square;
 
-        Chess::BitBoard clicked_square_mask = U64(1) << GET_INDEX(move.to.rank, move.to.file);
+        Chess::BitBoard clicked_square_mask = U64(1) << GET_INDEX_FROM_SQUARE(move.to.rank, move.to.file);
 
         if (G_vs.legal_squares & clicked_square_mask) {
 
@@ -65,31 +75,49 @@ internal void handleMouse(void) {
 
         G_vs.selected_square = Chess::OFF_SQUARE;
         G_vs.legal_squares = U64(0);
+
+        was_a_mouse_event = true;
         
     } break;
 
     case Mouse::RRELEASE: {
+
+        was_a_mouse_event = true;
         
     } break;
 
     }
+
+    return was_a_mouse_event;
 }
 
-internal void handleKeyboard(void) {
+internal bool handleKeyboard(void) {
+
+    bool was_a_keyboard_event = false;
 
     switch (G_event.kbd.type) {
 
     case  Key::FLIP_BOARD: {
+
         G_vs.is_board_flipped = (G_vs.is_board_flipped) ? false : true;
+
+        was_a_keyboard_event = true;
+
     } break;
 
     case Key::RESET_BOARD: {
+
         Chess::resetBoard(G_board);
+
+        was_a_keyboard_event = true;
+
     } break;
 
     default: break;
 
     }
+
+    return was_a_keyboard_event;
 }
 
 internal void update() {
@@ -97,11 +125,20 @@ internal void update() {
     G_vs.mousex = G_event.mouse.x;
     G_vs.mousey = G_event.mouse.y;
 
-    handleKeyboard();
-    handleMouse();
+    bool was_an_event = false;
+
+    was_an_event |= handleKeyboard();
+    was_an_event |= handleMouse();
+
+    if (was_an_event) {
+        
+    }
 }
 
 int main(void) {
+
+    VLDEnable();
+    VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, "memory_leaks.log");
 
     if (!SUCCESS(Platform::init())) {
         printf("There was an error initializing the platform layer\n");
