@@ -1,0 +1,6 @@
+
+- [x] requirenment docs
+- [x] architectural docs
+
+- [ ] technical docs (implementation)
+- [ ] End-User doc (user manual)

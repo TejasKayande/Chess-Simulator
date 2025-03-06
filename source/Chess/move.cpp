@@ -431,12 +431,7 @@ Square Chess::getKingPosition(Board *board, Player player) {
     case Player::WHITE: {
 
         int index = GET_FIST_SET_BIT(board->wKing);
-
         Square s = GET_SQUARE_FROM_INDEX(index);
-        
-        // s.file = index % MAX_FILE;
-        // s.rank = index / MAX_RANK;
-
         return s;
 
     } break;
@@ -444,11 +439,7 @@ Square Chess::getKingPosition(Board *board, Player player) {
     case Player::BLACK: {
 
         int index = GET_FIST_SET_BIT(board->bKing);
-
-        Square s;
-        s.file = index % 8;
-        s.rank = index / 8;
-
+        Square s = GET_SQUARE_FROM_INDEX(index);
         return s;
 
     } break;
