@@ -15,19 +15,27 @@ struct Move {
     Square from;       // piece's square before the move
     Square to;         // piece's square after the move
 
-    bool castle;       // was the move a castle move
-    Side castle_side;  // King side or Queen side if castled
+    enum MoveType {
+        SIMPLE = 0,
+        CAPTURE,
+        CASTLE,
+        PROMOTION,
+        ENPASSANT
+    } type;
 
-    bool promotion;    // was the move a pawn promotion
-    bool enpassant;    // was the move an anpassant capture 
+    Piece captured_piece;  // if the move was a caputer move, this holds what piece was captuered
+    Side  castle_side;
 
     char* fen;         // The FEN of the board after the move was made
 };
 
-void move(Board *board, Move move);
+void move(Board *board, Move *move);
+void undoMove(Board *board, Move move);
 
 BitBoard getValidSquares(Board *board, Square square, Piece piece);
 BitBoard getAttackingSquares(Board *board, Player player);
+BitBoard getCastlingSquares(Board *board, Player player);
+BitBoard getLegalSquares(Board *board, Square square, Piece piece);
 
 Square getKingPosition(Board *board, Player player);
 
@@ -35,5 +43,7 @@ bool isInCheck(Board *board, Player player);
 bool isCheckMate(Board *board, Player player);
 
 } // namespace Chess
+
+typedef Chess::Move::MoveType MoveType;
 
 #endif // _MOVE_H_

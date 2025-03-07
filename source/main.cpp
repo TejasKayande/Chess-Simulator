@@ -1,6 +1,4 @@
 
-#include <vld.h>
-
 #include "Platform/platform.h"
 #include "Chess/chess.h"
 
@@ -23,7 +21,8 @@ internal bool handleMouse(void) {
 
         was_a_mouse_event = true;
 
-        Chess::isCheckMate(G_board, G_board->turn);
+        Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
+        printf("clicked square: (%d, %d)\n", clicked_square.rank, clicked_square.file);
 
     } break;
 
@@ -36,10 +35,13 @@ internal bool handleMouse(void) {
 
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
         Chess::Piece  piece = Chess::getPieceAt(G_board, clicked_square);
+
         if (piece.color == G_board->turn) {
-            G_vs.selected_square = clicked_square;   
-            Chess::BitBoard legal_moves = Chess::getValidSquares(G_board, G_vs.selected_square, piece);
-            G_vs.legal_squares = legal_moves;
+
+            G_vs.selected_square = clicked_square;
+
+            G_vs.legal_squares = (Chess::getLegalSquares(G_board, G_vs.selected_square, piece) |
+                                  Chess::getCastlingSquares(G_board, G_board->turn));
         }
 
         was_a_mouse_event = true;
@@ -53,24 +55,19 @@ internal bool handleMouse(void) {
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
 
         Chess::Move move = { };
-        move.player = G_board->turn;
-        move.piece  = Chess::getPieceAt(G_board, G_vs.selected_square);
         move.from   = G_vs.selected_square;
         move.to     = clicked_square;
 
-        Chess::BitBoard clicked_square_mask = U64(1) << GET_INDEX_FROM_SQUARE(move.to.rank, move.to.file);
+        Chess::BitBoard clicked_square_mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(move.to.rank, move.to.file));
 
         if (G_vs.legal_squares & clicked_square_mask) {
 
-            Chess::Piece p = Chess::getPieceAt(G_board, move.to);
-
-            Chess::move(G_board, move);
+            Chess::move(G_board, &move);
             Chess::changeTurn(G_board);
 
-            if (p == Chess::EMPTY_SQUARE)
-                Platform::playSound(SoundType::MOVE);
-            else 
-                Platform::playSound(SoundType::CAPTURE);
+            if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
+            if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
+            if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
         }
 
         G_vs.selected_square = Chess::OFF_SQUARE;
@@ -131,14 +128,12 @@ internal void update() {
     was_an_event |= handleMouse();
 
     if (was_an_event) {
-        
+        if (Chess::isCheckMate(G_board, Chess::Player::WHITE)) printf("White is checkmated!\n");
+        if (Chess::isCheckMate(G_board, Chess::Player::BLACK)) printf("Black is checkmated!\n");
     }
 }
 
 int main(void) {
-
-    VLDEnable();
-    VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, "memory_leaks.log");
 
     if (!SUCCESS(Platform::init())) {
         printf("There was an error initializing the platform layer\n");

@@ -3,6 +3,35 @@
 
 using namespace Chess;
 
+internal void updateBoardInfo(Board *board) {
+
+    // check white
+    Piece white_king = getPieceAt(board, Square{0, 3});
+    if (white_king != WHITE_KING) board->white.king_moved = true;   
+
+    Piece white_king_rook = getPieceAt(board, Square{0, 0});
+    if (white_king_rook != WHITE_ROOK) {
+        printf("king not at {0,0}\n");
+        board->white.krook_moved = true;      
+    }
+
+    Piece white_queen_rook = getPieceAt(board, Square{0, 7});
+    if (white_queen_rook != WHITE_ROOK) board->white.qrook_moved = true;
+
+    // check black
+    Piece black_king = getPieceAt(board, Square{7, 3});
+    if (black_king != BLACK_KING) board->black.king_moved = true;
+
+    Piece black_king_rook = getPieceAt(board, Square{7, 0});
+    if (black_king_rook != BLACK_ROOK) board->black.krook_moved = true;
+
+    Piece black_queen_rook = getPieceAt(board, Square{7, 7});
+    if (black_queen_rook != BLACK_ROOK) board->black.qrook_moved = true;
+    
+    board->wOccupied = board->wPawn | board->wKnight | board->wBishop | board->wRook | board->wQueen | board->wKing;
+    board->bOccupied = board->bPawn | board->bKnight | board->bBishop | board->bRook | board->bQueen | board->bKing;
+}
+
 Board* Chess::initBoard(void) {
 
     // TODO(Tejas): add memory pool in Platform Layer
@@ -30,6 +59,9 @@ void Chess::setFen(Board *board, char *fen) {
     board->white.king_moved  = true; board->black.king_moved  = true;
     board->white.krook_moved = true; board->black.krook_moved = true;
     board->white.qrook_moved = true; board->black.qrook_moved = true;
+
+    board->wOccupied = U64(0);
+    board->bOccupied = U64(0);
 
     int rank = MAX_RANK - 1;
     int file = MAX_FILE - 1;
@@ -125,7 +157,6 @@ void Chess::setFen(Board *board, char *fen) {
             }
 
             file--;
-            
         }
     }
 }
@@ -191,8 +222,7 @@ void Chess::setPiece(Board *board, Square square, Piece piece) {
     else if (piece == WHITE_KING)   board->wKing   |= mask;
     else if (piece == BLACK_KING)   board->bKing   |= mask;
 
-    board->wOccupied = board->wPawn | board->wKnight | board->wBishop | board->wRook | board->wQueen | board->wKing;
-    board->bOccupied = board->bPawn | board->bKnight | board->bBishop | board->bRook | board->bQueen | board->bKing;
+    updateBoardInfo(board);
 }
 
 void Chess::removePiece(Board *board, Square square) {
@@ -206,8 +236,7 @@ void Chess::removePiece(Board *board, Square square) {
     board->wQueen  &= mask; board->bQueen  &= mask;
     board->wKing   &= mask; board->bKing   &= mask;
     
-    board->wOccupied = board->wPawn | board->wKnight | board->wBishop | board->wRook | board->wQueen | board->wKing;
-    board->bOccupied = board->bPawn | board->bKnight | board->bBishop | board->bRook | board->bQueen | board->bKing;
+    updateBoardInfo(board);
 }
 
 void Chess::changeTurn(Board *board) {

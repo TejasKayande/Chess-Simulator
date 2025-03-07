@@ -53,6 +53,7 @@ struct Board {
         bool krook_moved;
         bool qrook_moved;
     };
+
     PlayerInfo white;
     PlayerInfo black;
 
