@@ -10,10 +10,7 @@ internal void updateBoardInfo(Board *board) {
     if (white_king != WHITE_KING) board->white.king_moved = true;   
 
     Piece white_king_rook = getPieceAt(board, Square{0, 0});
-    if (white_king_rook != WHITE_ROOK) {
-        printf("king not at {0,0}\n");
-        board->white.krook_moved = true;      
-    }
+    if (white_king_rook != WHITE_ROOK) board->white.krook_moved = true;      
 
     Piece white_queen_rook = getPieceAt(board, Square{0, 7});
     if (white_queen_rook != WHITE_ROOK) board->white.qrook_moved = true;

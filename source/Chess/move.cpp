@@ -50,8 +50,6 @@ internal BitBoard getPawnValidSquares(Board *board, Square square, Player player
     BitBoard legal = U64(0);
     BitBoard pawn_square_mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(square.rank, square.file));
 
-    // TODO(Tejas): Add promotion and enpassant
-
     switch (player) {
 
     case Player::WHITE: {
@@ -127,8 +125,6 @@ internal BitBoard getKnightValidSquares(Board *board, Square square, Player play
 internal BitBoard getBishopValidSquares(Board *board, Square square, Player player) {
 
     BitBoard legal = U64(0);
-
-    // TODO(Tejas): Refactor this!!!
 
     for (int rank = square.rank + 1, file = square.file + 1;
          rank < MAX_RANK && file < MAX_FILE;
@@ -336,6 +332,8 @@ internal BitBoard getRookValidSquares(Board *board, Square square, Player player
 
 internal BitBoard getKingValidSquares(Board *board, Square square, Player player) {
 
+    // TODO(Tejas): Refactor this!!!
+
     BitBoard legal = U64(0);
     BitBoard king_square_mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(square.rank, square.file));
 
@@ -356,7 +354,6 @@ internal BitBoard getKingValidSquares(Board *board, Square square, Player player
     if (square.file != 0)
         legal |= king_square_mask >> (MAX_RANK + 1);
 
-
     if (player == Player::WHITE) legal &= ~(board->wOccupied);
     if (player == Player::BLACK) legal &= ~(board->bOccupied);
     
@@ -370,30 +367,57 @@ void Chess::move(Board *board, Move *move) {
     Piece p_from = getPieceAt(board, move->from);
     Piece p_to   = getPieceAt(board, move->to);
 
-    if (p_from.type == PType::KING) {
+    move->piece  = p_from;
+    move->player = board->turn;
+    move->type   = MoveType::SIMPLE;
 
-        int square_diff = move->to.file - move->from.file;
-        
-        if ( square_diff > 1 || square_diff < -1) {
+    switch (p_from.type) {
+
+    case PType::KING: {
+
+        int file_difference = move->to.file - move->from.file;
+
+        // NOTE(Tejas): this checks if the king was requested to
+        //              move to more distance than 1 square
+        if (file_difference > 1 || file_difference < -1) {
+
+            // NOTE(Tejas): Castling the King
 
             move->type = MoveType::CASTLE;
+
+            if (move->from.file > move->to.file) move->castle_side = Side::KING_SIDE;
+            if (move->from.file < move->to.file) move->castle_side = Side::QUEEN_SIDE;
+
+            Piece king_piece = { PType::KING, move->player };
+            Piece rook_piece = { PType::ROOK, move->player };
+
+            removePiece(board, move->from);
+            setPiece(board, move->to, king_piece);
+
+            int rook_rank      = move->to.rank;
+            int rook_from_file = (move->castle_side == Side::KING_SIDE) ? 0 : 7;
+            int rook_to_file   = (move->castle_side == Side::KING_SIDE) ? move->to.file + 1 : move->to.file - 1;
+
+            Square rook_from_square = { rook_rank, rook_from_file };
+            Square rook_to_square   = { rook_rank, rook_to_file };
+
+            removePiece(board, rook_from_square);
+            setPiece(board, rook_to_square, rook_piece);
         }
 
-    } else {
+    } break;
 
-        if (p_to != EMPTY_SQUARE) {
-            move->type = MoveType::CAPTURE;
-        } else {
-            move->type = MoveType::SIMPLE;
-        }
+    default: {
+
+        if (p_to != EMPTY_SQUARE) move->type = MoveType::CAPTURE;
+        move->captured_piece = p_to;
+
+        removePiece(board, move->from);
+        setPiece(board, move->to, move->piece);
+        
+    } break;
+
     }
-
-    move->piece = p_from;
-    move->captured_piece = p_to;
-    move->player = board->turn;
-
-    removePiece(board, move->from);
-    setPiece(board, move->to, move->piece);
 }
 
 void Chess::undoMove(Board *board, Move move) {
@@ -444,11 +468,10 @@ BitBoard Chess::getAttackingSquares(Board *board, Player player) {
 
         BitBoard piece_attacking_square = U64(0);
 
-        if (piece.type == PType::PAWN) {
+        if (piece.type == PType::PAWN)
             piece_attacking_square = getPawnAttackingSquares(board, square, player);
-        } else {
+        else
             piece_attacking_square = getValidSquares(board, square, piece);
-        }
 
         if (piece.color == player)
             attacking_squares |= piece_attacking_square;
@@ -471,10 +494,7 @@ BitBoard Chess::getCastlingSquares(Board *board, Player player) {
     case Player::WHITE: {
 
         // king sid
-        printf("WHITE -> king: %d, krook: %d, qrook: %d\n", board->white.king_moved, board->white.krook_moved, board->white.qrook_moved);
         if (!(board->white.king_moved || board->white.krook_moved)) {
-
-            // printf("hit!\n");
 
             Player   opp_player            = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
             BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
@@ -484,9 +504,6 @@ BitBoard Chess::getCastlingSquares(Board *board, Player player) {
 
             Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
             Piece p_at_middle_square      = getPieceAt(board, middle_square);
-
-            // printf("kcs (%d, %d): %d    ms (%d, %d): %d\n", king_castle_square.rank, king_castle_square.file,
-            //        p_at_king_castle_square, middle_square.rank, middle_square.file, p_at_middle_square);
 
             if (p_at_king_castle_square == EMPTY_SQUARE && p_at_middle_square == EMPTY_SQUARE) {
 
@@ -504,83 +521,90 @@ BitBoard Chess::getCastlingSquares(Board *board, Player player) {
         }
 
         // queen side
-        // if (!(board->white.king_moved || board->white.qrook_moved)) {
+        if (!(board->white.king_moved || board->white.qrook_moved)) {
 
-        //     Player opp_player = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
-        //     BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
+            Player   opp_player            = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
+            BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
 
-        //     Square king_castle_square = { 0, 5 };
-        //     Square middle_square      = { 0, 4 };
+            Square king_castle_square = { 0, 5 };
+            Square middle_square      = { 0, 4 };
 
-        //     Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
-        //     Piece p_at_middle_square      = getPieceAt(board, middle_square);
+            Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
+            Piece p_at_middle_square      = getPieceAt(board, middle_square);
 
-        //     if ((p_at_king_castle_square == EMPTY_SQUARE) && (p_at_middle_square == EMPTY_SQUARE)) {
+            if (p_at_king_castle_square == EMPTY_SQUARE && p_at_middle_square == EMPTY_SQUARE) {
 
-        //         BitBoard middle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
-        //         BitBoard king_castle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                BitBoard middle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
+                BitBoard king_castle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
             
-        //         if (!(king_castle_square_mask & opp_attacking_squares & middle_square_mask))
-        //             legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
-        //     }
-        // }
+                if (!((king_castle_square_mask & opp_attacking_squares) ||
+                      (middle_square_mask & opp_attacking_squares)))
+                {
+                    legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                }
+            }
+        }
 
     } break;
 
     case Player::BLACK: {
 
-        // printf("BLACK -> king: %d, krook: %d, qrook: %d\n", board->black.king_moved, board->black.krook_moved, board->black.qrook_moved);
+        // king sid
+        if (!(board->black.king_moved || board->black.krook_moved)) {
 
-        // // king side
-        // if (!(board->black.king_moved || board->black.krook_moved)) {
+            Player   opp_player            = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
+            BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
 
-        //     Player opp_player = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
-        //     BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
+            Square king_castle_square = { 7, 1 };
+            Square middle_square      = { 7, 2 };
 
-        //     Square king_castle_square = { 7, 1 };
-        //     Square middle_square      = { 7, 2 };
+            Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
+            Piece p_at_middle_square      = getPieceAt(board, middle_square);
 
-        //     Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
-        //     Piece p_at_middle_square      = getPieceAt(board, middle_square);
+            if (p_at_king_castle_square == EMPTY_SQUARE && p_at_middle_square == EMPTY_SQUARE) {
 
-        //     if ((p_at_king_castle_square != EMPTY_SQUARE) && (p_at_middle_square != EMPTY_SQUARE)) {
-
-        //         BitBoard middle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
-        //         BitBoard king_castle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                BitBoard middle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
+                BitBoard king_castle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
             
-        //         if (!(king_castle_square_mask & opp_attacking_squares & middle_square_mask))
-        //             legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
-        //     }
-        // }
+                if (!((king_castle_square_mask & opp_attacking_squares) ||
+                      (middle_square_mask & opp_attacking_squares)))
+                {
+                    legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                }
+            }
+        }
 
-        // // queen side
-        // if (!(board->black.king_moved || board->black.qrook_moved)) {
+        // queen side
+        if (!(board->black.king_moved || board->black.qrook_moved)) {
 
-        //     Player opp_player = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
-        //     BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
+            Player   opp_player            = (player == Player::WHITE) ? Player::BLACK : Player::WHITE;
+            BitBoard opp_attacking_squares = getAttackingSquares(board, opp_player);
 
-        //     Square king_castle_square = { 7, 5 };
-        //     Square middle_square      = { 7, 4 };
+            Square king_castle_square = { 7, 5 };
+            Square middle_square      = { 7, 4 };
 
-        //     Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
-        //     Piece p_at_middle_square      = getPieceAt(board, middle_square);
+            Piece p_at_king_castle_square = getPieceAt(board, king_castle_square);
+            Piece p_at_middle_square      = getPieceAt(board, middle_square);
 
-        //     if ((p_at_king_castle_square != EMPTY_SQUARE) && (p_at_middle_square != EMPTY_SQUARE)) {
+            if (p_at_king_castle_square == EMPTY_SQUARE && p_at_middle_square == EMPTY_SQUARE) {
 
-        //         BitBoard middle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
-        //         BitBoard king_castle_square_mask =
-        //             CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                BitBoard middle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(middle_square.rank, middle_square.file));
+                BitBoard king_castle_square_mask =
+                    CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
             
-        //         if (!(king_castle_square_mask & opp_attacking_squares & middle_square_mask))
-        //             legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
-        //     }
-        // }
-        
+                if (!((king_castle_square_mask & opp_attacking_squares) ||
+                      (middle_square_mask & opp_attacking_squares)))
+                {
+                    legal |= CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(king_castle_square.rank, king_castle_square.file));
+                }
+            }
+        }
+
     } break;
 
     }
@@ -593,9 +617,11 @@ BitBoard Chess::getLegalSquares(Board *board, Square square, Piece piece) {
     BitBoard legal = getValidSquares(board, square, piece);
 
     // filtering out the moves that put self king in check
-    Square from = square;
-    Square to   = OFF_SQUARE;
+    Square from   = square;
+    Square to     = OFF_SQUARE;
     Player player = piece.color;
+
+    Board copy_board = *board;
 
     for (int i = 0; i < 64; i++) {
 
@@ -609,16 +635,16 @@ BitBoard Chess::getLegalSquares(Board *board, Square square, Piece piece) {
             move.from  = from;
             move.to    = to;
 
-            // // trying the move here
-            Chess::move(board, &move);
+            // trying the move here
+            Chess::move(&copy_board, &move);
 
-            if (isInCheck(board, player)) {
+            if (isInCheck(&copy_board, player)) {
                 mask = ~mask;
                 legal &= mask;
             }
 
             // undo the made move
-            Chess::undoMove(board, move);
+            Chess::undoMove(&copy_board, move);
         }
     }
 

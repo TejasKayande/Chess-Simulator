@@ -21,9 +21,6 @@ internal bool handleMouse(void) {
 
         was_a_mouse_event = true;
 
-        Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
-        printf("clicked square: (%d, %d)\n", clicked_square.rank, clicked_square.file);
-
     } break;
 
     case Mouse::LCLICK: {
@@ -34,14 +31,16 @@ internal bool handleMouse(void) {
         if (G_vs.selected_square != Chess::OFF_SQUARE) break;
 
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
-        Chess::Piece  piece = Chess::getPieceAt(G_board, clicked_square);
+        Chess::Piece  piece          = Chess::getPieceAt(G_board, clicked_square);
 
         if (piece.color == G_board->turn) {
 
             G_vs.selected_square = clicked_square;
 
-            G_vs.legal_squares = (Chess::getLegalSquares(G_board, G_vs.selected_square, piece) |
-                                  Chess::getCastlingSquares(G_board, G_board->turn));
+            G_vs.legal_squares = Chess::getLegalSquares(G_board, G_vs.selected_square, piece);
+
+            if (piece.type == Chess::PType::KING)
+                G_vs.legal_squares |= Chess::getCastlingSquares(G_board, G_board->turn);
         }
 
         was_a_mouse_event = true;
@@ -49,7 +48,7 @@ internal bool handleMouse(void) {
     } break;
 
     case Mouse::LRELEASE: {
-        
+
         if (G_vs.selected_square == Chess::OFF_SQUARE) break;
 
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
@@ -128,8 +127,8 @@ internal void update() {
     was_an_event |= handleMouse();
 
     if (was_an_event) {
-        if (Chess::isCheckMate(G_board, Chess::Player::WHITE)) printf("White is checkmated!\n");
-        if (Chess::isCheckMate(G_board, Chess::Player::BLACK)) printf("Black is checkmated!\n");
+        if (Chess::isCheckMate(G_board, Chess::Player::WHITE)) printf("White is Checkmated!\n");
+        if (Chess::isCheckMate(G_board, Chess::Player::BLACK)) printf("Black is Checkmated!\n");
     }
 }
 
