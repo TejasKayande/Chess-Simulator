@@ -21,11 +21,8 @@ set SOURCE_FILES=..\source\main.cpp ^
 
 set OUTPUT_EXE=chess.exe
 
-call cl %FLAGS% ^
-        %SOURCE_FILES% ^
-        %SYSTEM_LIBS% ^
-        /link %MIDDLEWARE_LIB_PATH% ^
-        /SUBSYSTEM:CONSOLE /OUT:%OUTPUT_EXE% 
+call cl %FLAGS% %SOURCE_FILES% %SYSTEM_LIBS% ^
+        /link /SUBSYSTEM:CONSOLE /OUT:%OUTPUT_EXE% 
 
 popd
 endlocal

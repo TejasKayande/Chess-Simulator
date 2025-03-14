@@ -64,7 +64,7 @@ Board* initBoard(void);
 void   cleanUpBoard(Board **board);
 
 void setFen(Board *board, char* fen);
-void getFen(Board *board);
+char* getFen(Board *board);
 
 Piece getPieceAt(Board *board, Square square);
 void  setPiece(Board *board, Square square, Piece piece);

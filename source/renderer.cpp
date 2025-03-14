@@ -6,8 +6,22 @@
 
 using namespace Chess;
 
-// TODO(Tejas): Lets not hard code pixel values!
-global const int SQUARE_SIZE = 100;
+
+struct BoardInfo {
+
+    // offsets inside window
+    int x_offset;
+    int y_offset;
+
+    bool is_flipped;
+
+    ColorTheme theme;
+
+    int square_size; // size of a square in pixel
+    int texture_dim; // the size of a texture (square)
+}; 
+global BoardInfo G_boardInfo;
+
 
 internal const Platform::TexID G_textures[COLOR_COUNT][PIECE_COUNT] = {
 
@@ -18,139 +32,159 @@ internal const Platform::TexID G_textures[COLOR_COUNT][PIECE_COUNT] = {
       Platform::BROOK, Platform::BQUEEN , Platform::BKING  }
 };
 
-internal void fillSquare(Square square, Color color, bool is_flipped) {
+internal void fillSquare(Square square, Color color) {
 
     if (square == OFF_SQUARE) return;
 
-    if (is_flipped) {
+    if (G_boardInfo.is_flipped) {
         square.rank = (MAX_RANK - 1) - square.rank;
         square.file = (MAX_RANK - 1) - square.file;
     }
 
-    int x = square.file * SQUARE_SIZE;
-    int y = square.rank * SQUARE_SIZE;
+    int x = square.file * G_boardInfo.square_size + G_boardInfo.x_offset;
+    int y = square.rank * G_boardInfo.square_size + G_boardInfo.y_offset;
 
-    Platform::fillRect(x, y, SQUARE_SIZE, SQUARE_SIZE, color);
+    Platform::fillRect(x, y, G_boardInfo.square_size, G_boardInfo.square_size, color);
 }
 
-internal void renderPieceOnSquare(Square square, Piece piece, bool is_flipped) {
+internal void renderPieceOnSquare(Square square, Piece piece) {
 
-    if (is_flipped) {
+    if (G_boardInfo.is_flipped) {
         square.rank = (MAX_RANK - 1) - square.rank;
         square.file = (MAX_RANK - 1) - square.file;
     }
 
-    int x = square.file * SQUARE_SIZE;
-    int y = square.rank * SQUARE_SIZE;
+    int x = square.file * G_boardInfo.square_size + G_boardInfo.x_offset;
+    int y = square.rank * G_boardInfo.square_size + G_boardInfo.y_offset;
 
     if (piece.type != Piece::NO_PIECE)
-        Platform::renderTexture(x, y, G_textures[piece.color - 1][piece.type - 1]);
+        Platform::renderTexture(x, y, G_boardInfo.texture_dim, G_boardInfo.texture_dim,
+                                G_textures[piece.color - 1][piece.type - 1]);
 }
 
 internal void renderPieceOnMouse(int mousex, int mousey, Piece piece) {
     
-    int width, height;
-    Platform::getWindowDimention(&width, &height);
+    int width  = (G_boardInfo.square_size * MAX_FILE) + G_boardInfo.x_offset;
+    int height = (G_boardInfo.square_size * MAX_RANK) + G_boardInfo.y_offset;
 
     int x = mousex;
     int y = mousey;
 
-    x = MIN(width - (TEXTURE_DIM / 2), x);
-    y = MIN(height - (TEXTURE_DIM / 2), y);
+    x = MIN(width  - (G_boardInfo.texture_dim / 2), x);
+    y = MIN(height - (G_boardInfo.texture_dim / 2), y);
 
-    x = MAX(0, x);
-    y = MAX(0, y);
+    x = MAX(G_boardInfo.x_offset + (G_boardInfo.texture_dim / 2), x);
+    y = MAX(G_boardInfo.y_offset + (G_boardInfo.texture_dim / 2), y);
 
-    x -= TEXTURE_DIM / 2;
-    y -= TEXTURE_DIM / 2;
+    x -= G_boardInfo.texture_dim / 2;
+    y -= G_boardInfo.texture_dim / 2;
 
-    Platform::renderTexture(x, y, G_textures[piece.color - 1][piece.type - 1]);
+    Platform::renderTexture(x, y, G_boardInfo.texture_dim, G_boardInfo.texture_dim,
+                            G_textures[piece.color - 1][piece.type - 1]);
 }
 
-internal void renderRankCoord(Square s, bool is_flipped) {
+internal void renderRankCoord(Square s) {
 
     Color c = 0x00000000;
 
     bool is_dark_square = (s.rank + s.file) % 2;
-    if (is_dark_square) c = 0xFFFFFFFF;
-    else c = 0xFF000000;
+    if (is_dark_square) c = G_boardInfo.theme.light;
+    else c = G_boardInfo.theme.dark;
 
     char b[2];
-    if (is_flipped)
+    if (G_boardInfo.is_flipped)
         sprintf_s(b, sizeof(b), "%d", MAX_RANK - s.rank);
     else 
         sprintf_s(b, sizeof(b), "%d", s.rank+ 1);
         
     int px = 2, py = 2;
 
-    int x = s.file * SQUARE_SIZE + px;
-    int y = s.rank * SQUARE_SIZE + py;
-    Platform::renderFont(b, x, y, FontType::VERY_SMALL, c);
+    int x = s.file * G_boardInfo.square_size + px + G_boardInfo.x_offset;
+    int y = s.rank * G_boardInfo.square_size + py + G_boardInfo.y_offset;
+    Platform::renderFont(b, x, y, FontType::NORMAL, c);
 }
 
-internal void renderFileCoord(Square s, bool is_flipped) {
+internal void renderFileCoord(Square s) {
 
     Color c = 0x00000000;
 
     bool is_dark_square = (s.rank + s.file) % 2;
-    if (is_dark_square) c = 0xFFFFFFFF;
-    else c = 0xFF000000;
+    if (is_dark_square) c = G_boardInfo.theme.light;
+    else c = G_boardInfo.theme.dark;
 
     char b[2];
 
-    if (is_flipped)
+    if (G_boardInfo.is_flipped)
         sprintf_s(b, sizeof(b), "%c", ('a' - 1) + s.file + 1);
     else
         sprintf_s(b, sizeof(b), "%c", 'h' - s.file);
 
-    int px = 80, py = 72;
+    int px = (int)(G_boardInfo.square_size * 0.8f), py = (int)(G_boardInfo.square_size * 0.7f);
 
-    int x = s.file * SQUARE_SIZE + px;
-    int y = s.rank * SQUARE_SIZE + py;
-    Platform::renderFont(b, x, y, FontType::VERY_SMALL, c);
+    int x = s.file * G_boardInfo.square_size + px + G_boardInfo.x_offset;
+    int y = s.rank * G_boardInfo.square_size + py + G_boardInfo.y_offset;
+    Platform::renderFont(b, x, y, FontType::NORMAL, c);
 }
 
-
-
 void renderBoard(Board *board, VisualSetting &vs) {
+
+    G_boardInfo.x_offset    = 0;
+    G_boardInfo.y_offset    = 0;
+    G_boardInfo.square_size = 75;
+    G_boardInfo.texture_dim = G_boardInfo.square_size;
+    G_boardInfo.is_flipped  = vs.is_board_flipped;
+    G_boardInfo.theme       = vs.theme;
 
     bool isCheck    = Chess::isInCheck(board, board->turn);
     Square king_pos = getKingPosition(board, board->turn);
 
+    // NOTE(Tejas): The rendering is done in stages to layer everything for
+    //              better visual
+
+    // rendering the background squares
+    for (int rank = 0; rank < MAX_RANK; rank++) {
+        for (int file = 0; file < MAX_FILE; file++) {
+            if ((rank + file) % 2 == 0)
+                fillSquare(Square{rank,file}, vs.theme.light);
+            else
+                fillSquare(Square{rank,file}, vs.theme.dark);
+        }
+    }
+
+    // rendering the rank and file numbers
+    for (int i = 0; i < 8; i++) {
+        renderRankCoord(Square{ i, 0 });
+        renderFileCoord(Square{ 7, i });
+    }
+
+    // rendering the pieces and 
     for (int rank = 0; rank < MAX_RANK; rank++) {
 
         for (int file = 0; file < MAX_FILE; file++) {
 
             Square current_square = { rank, file };
-
-            if ((rank + file) % 2 == 0) {
-                fillSquare(current_square, vs.theme.light, vs.is_board_flipped);
-            } else {
-                fillSquare(current_square, vs.theme.dark, vs.is_board_flipped);
-            }
-
-            Chess::BitBoard mask = U64(1) << GET_INDEX_FROM_SQUARE(rank, file);
-            if (vs.legal_squares & mask)
-                fillSquare(current_square, vs.theme.legal, vs.is_board_flipped);
-
-            if (vs.selected_square == current_square)
-                fillSquare(vs.selected_square, vs.theme.high, vs.is_board_flipped);
-
-            
             Piece piece = getPieceAt(board, current_square);
 
-            if (isCheck && piece == Piece { PType::KING, board->turn })
-                fillSquare(king_pos, 0x99FF0000, vs.is_board_flipped);
+            Chess::BitBoard mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(rank, file));
+
+            if (vs.selected_square != OFF_SQUARE) {
+
+                if (vs.legal_squares & mask && vs.selected_square != OFF_SQUARE)
+                    fillSquare(current_square, vs.theme.legal);
+
+                if (vs.selected_square == current_square)
+                    fillSquare(vs.selected_square, vs.theme.high);
+            }
+
 
             if (vs.selected_square != current_square)
-                renderPieceOnSquare(current_square, piece, vs.is_board_flipped);
+                renderPieceOnSquare(current_square, piece);
+
+            if (isCheck && piece == Piece { PType::KING, board->turn })
+                fillSquare(king_pos, 0x99FF0000);
         }
     }
 
-    for (int i = 0; i < 8; i++) {
-        renderRankCoord(Square{ i, 0 }, vs.is_board_flipped);
-        renderFileCoord(Square{ 7, i }, vs.is_board_flipped);
-    }
 
     // NOTE(Tejas): the selected piece follows the cursor around
     if (vs.selected_square != OFF_SQUARE) {
@@ -165,17 +199,23 @@ void renderBoard(Board *board, VisualSetting &vs) {
     //     BitBoard mask = U64(1) << index;
     //     if (mask & b) {
     //         Square square = { index / MAX_RANK, index % MAX_FILE };
-    //         fillSquare(square, 0x99FF0000, vs.is_board_flipped);
+    //         fillSquare(square, 0x99FF0000);
     //     }
     // }
 }
 
 Square pixelToBoard(int x, int y, bool is_flipped) {
-    
+
+    if (x < G_boardInfo.x_offset) return OFF_SQUARE;
+    if (y < G_boardInfo.y_offset) return OFF_SQUARE;
+
+    if (x > (G_boardInfo.x_offset + (G_boardInfo.square_size * MAX_FILE))) return OFF_SQUARE;
+    if (y > (G_boardInfo.y_offset + (G_boardInfo.square_size * MAX_RANK))) return OFF_SQUARE;
+
     Square square = { };
 
-    square.rank = y / SQUARE_SIZE;
-    square.file = x / SQUARE_SIZE;
+    square.rank = (y - G_boardInfo.y_offset) / G_boardInfo.square_size;
+    square.file = (x - G_boardInfo.x_offset) / G_boardInfo.square_size;
 
     if (is_flipped) {
         square.rank = (MAX_RANK - 1) - square.rank;

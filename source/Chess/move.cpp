@@ -403,21 +403,20 @@ void Chess::move(Board *board, Move *move) {
 
             removePiece(board, rook_from_square);
             setPiece(board, rook_to_square, rook_piece);
+
+            return;
         }
 
     } break;
 
-    default: {
-
-        if (p_to != EMPTY_SQUARE) move->type = MoveType::CAPTURE;
-        move->captured_piece = p_to;
-
-        removePiece(board, move->from);
-        setPiece(board, move->to, move->piece);
-        
-    } break;
-
     }
+
+
+    if (p_to != EMPTY_SQUARE) move->type = MoveType::CAPTURE;
+    move->captured_piece = p_to;
+
+    removePiece(board, move->from);
+    setPiece(board, move->to, move->piece);
 }
 
 void Chess::undoMove(Board *board, Move move) {

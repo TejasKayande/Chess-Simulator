@@ -47,6 +47,7 @@ Board* Chess::initBoard(void) {
 }
 
 void Chess::cleanUpBoard(Board **board) {
+
     free(*board);
     *board = NULL;
 }
@@ -158,9 +159,10 @@ void Chess::setFen(Board *board, char *fen) {
     }
 }
 
-void Chess::getFen(Board *board) {
+char* Chess::getFen(Board *board) {
 
     (void*)(board);
+    return NULL;
 }
 
 Piece Chess::getPieceAt(Board *board, Square square) {

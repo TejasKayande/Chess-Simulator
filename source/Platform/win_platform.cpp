@@ -13,6 +13,27 @@
 
 using namespace Platform;
 
+// Menu Items
+#define IDR_MYMENU   101
+
+#define ID_FILE_NEW_GAME 5010
+#define ID_FILE_LOAD_FEN 5020
+#define ID_FILE_QUIT     5040
+
+#define ID_VIEW_FLIP_BOARD                6001
+#define ID_VIEW_THEME_ONE                 6011
+#define ID_VIEW_THEME_TWO                 6012
+#define ID_VIEW_THEME_THREE               6013
+#define ID_VIEW_THEME_FOUR                6014
+#define ID_VIEW_THEME_FIVE                6015
+#define ID_VIEW_HIGHLIGHT_LEGAL_MOVES     6002
+#define ID_VIEW_HIGHLIGHT_SELECTED_SQUARE 6003
+#define ID_VIEW_HIGHLIGHT_LATEST_MOVE     6004
+
+#define ID_HELP_ABOUT    7003
+#define ID_HELP_KEYBINDS 7004
+
+
 struct KeyState {
 
     // keyboard
@@ -141,11 +162,27 @@ internal LRESULT WINAPI WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
     switch (msg) {
 
+    case WM_COMMAND: {
+
+        switch(LOWORD(wParam)) {
+
+        case ID_FILE_NEW_GAME: {} break;
+
+        case ID_FILE_LOAD_FEN: {} break;
+
+        case ID_FILE_QUIT: {
+            G_window.running = false;
+        } break;
+            
+        }
+
+    } break;
+
     case WM_DESTROY: {
         PostQuitMessage(0);
     } break;
 
-    case WM_CLOSE : {
+    case WM_CLOSE: {
         G_window.running = false;
     } break;
 
@@ -205,9 +242,11 @@ defer:
 
 int Platform::init(void) {
 
-    G_window.width = 800;
-    G_window.height = 800;
-    G_window.name = "Chess Simulator";
+    // G_window.width  = 1200;
+    // G_window.height = 1000;
+    G_window.width  = 800;
+    G_window.height = 820;
+    G_window.name   = "Chess Simulator";
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
@@ -231,7 +270,6 @@ int Platform::init(void) {
         return -1;
     }
 
-
     RECT wr;
     wr.left = 0;
     wr.right = G_window.width;
@@ -241,13 +279,6 @@ int Platform::init(void) {
 
     G_window.width = wr.right - wr.left;
     G_window.height = wr.bottom - wr.top;
-
-    // int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    // int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-    // G_window.handle = CreateWindowExA(0, wc.lpszClassName, G_window.name,
-    //                                  WS_POPUP, 0, 0, screenWidth, screenHeight,
-    //                                  NULL, NULL, hInstance, NULL);
 
     G_window.handle = CreateWindowExA(0, wc.lpszClassName, G_window.name,
                                       WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -264,6 +295,45 @@ int Platform::init(void) {
 
     ShowWindow(G_window.handle, SW_SHOWNORMAL);
     UpdateWindow(G_window.handle);
+
+    { // adding the menu
+
+        HMENU menu = CreateMenu();
+
+        HMENU file_menu = CreatePopupMenu();
+        HMENU view_menu = CreatePopupMenu();
+        HMENU help_menu = CreatePopupMenu();
+
+        // file menu
+        AppendMenu(file_menu, MF_STRING, ID_FILE_NEW_GAME, "New Game \t X");
+        AppendMenu(file_menu, MF_STRING, ID_FILE_LOAD_FEN, "Load FEN");
+        AppendMenu(file_menu, MF_STRING, ID_FILE_QUIT    , "Quit");
+
+        // view menu
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_FLIP_BOARD, "Flip Board \t F");
+        HMENU theme_menu = CreatePopupMenu();
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_ONE   , "One");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_TWO   , "Two");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_THREE , "Three");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FOUR  , "Four");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FIVE  , "Five");
+        AppendMenu(view_menu , MF_POPUP , (UINT_PTR)theme_menu, "Theme");
+
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LEGAL_MOVES,     "Highlight Legal Moves");
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_SELECTED_SQUARE, "Highlight Selected Square");
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LATEST_MOVE,     "Highlight Latest Move");
+
+        // help menu
+        AppendMenu(help_menu, MF_STRING, ID_HELP_ABOUT, "About");
+        AppendMenu(help_menu, MF_STRING, ID_HELP_KEYBINDS, "Keybinds");
+
+        // final menu
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)file_menu, "File");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)view_menu, "View");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)help_menu, "Help");
+
+        SetMenu(G_window.handle, menu);
+    }
 
     G_window.running = true;
 
@@ -288,7 +358,7 @@ int Platform::init(void) {
                                               DWRITE_FONT_WEIGHT_REGULAR,
                                               DWRITE_FONT_STYLE_NORMAL,
                                               DWRITE_FONT_STRETCH_NORMAL,
-                                              24.0f, L"en-us", &G_direct2D.nr_font);
+                                              22.0f, L"en-us", &G_direct2D.nr_font);
 
             G_direct2D.nr_font->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
             G_direct2D.nr_font->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -410,12 +480,12 @@ void Platform::pollEvents(Event &event) {
     // NOTE(Tejas): Mouse clicks are registered as soon as they are clicked but
     //              the next click is only registered after the button is released
     //              and re-pressed. (This to avoid dragging effects)
-    if (GetAsyncKeyState(LEFT_CLICK_KEY_CODE) & pressed) {
+    if ((GetAsyncKeyState(LEFT_CLICK_KEY_CODE) & pressed) && G_keyState.lmouse_down == false) {
         G_keyState.lmouse_down = true;
         event.mouse.type = Mouse::LCLICK;
     }
 
-    if (GetAsyncKeyState(RIGHT_CLICK_KEY_CODE) & pressed) {
+    if ((GetAsyncKeyState(RIGHT_CLICK_KEY_CODE) & pressed) && G_keyState.rmouse_down == false) {
         G_keyState.rmouse_down = true;   
         event.mouse.type = Mouse::RCLICK;
     }
@@ -470,7 +540,7 @@ void Platform::pollEvents(Event &event) {
 void Platform::clear(void) {
     
     G_direct2D.target->BeginDraw();
-    G_direct2D.target->Clear(D2D1::ColorF(D2D1::ColorF::Black)); 
+    G_direct2D.target->Clear(D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.3f)); 
 }
 
 void Platform::present(void) {
@@ -492,7 +562,7 @@ void Platform::fillRect(int x, int y, int w, int h, Color c) {
     G_direct2D.target->FillRectangle(D2D1::RectF((f32)x, (f32)y, (f32)(x + w), (f32)(y + h)), G_direct2D.brush);
 }
 
-void Platform::renderTexture(int x, int y, TexID tex_id) {
+void Platform::renderTexture(int x, int y, int w, int h, TexID tex_id) {
 
     ID2D1Bitmap *tex = NULL;
     
@@ -511,18 +581,17 @@ void Platform::renderTexture(int x, int y, TexID tex_id) {
 
     ASSERT(tex == NULL, "Texture was null for the piece ID!");
 
-    D2D1_SIZE_F size = tex->GetSize();
-    D2D1_RECT_F rect = { (f32)x, (f32)y, x + size.width, y + size.height };
+    D2D1_RECT_F rect = { (f32)x, (f32)y, (f32)(x + w), (f32)(y + h) };
     G_direct2D.target->DrawBitmap(tex, rect);
 }
 
 void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     IDWriteTextFormat* font = NULL;
-    if (f == FontType::VERY_SMALL) font = G_direct2D.nr_font;
+    if (f == FontType::VERY_SMALL) return; 
     // TODO(Tejas): add these fonts
     if (f == FontType::SMALL) return;
-    if (f == FontType::NORMAL) return;
+    if (f == FontType::NORMAL) font = G_direct2D.nr_font;
     if (f == FontType::LARGE) return;
     if (f == FontType::VERY_LARGE) return;
 
@@ -548,10 +617,10 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
     free(wideText);
 }
 
-void Platform::getWindowDimention(int *width, int *height) {
+void Platform::getWindowDimention(int *w, int *h) {
 
-    *width = G_window.width;
-    *height = G_window.height;
+    *w = G_window.width;
+    *h = G_window.height;
 }
 
 int Platform::getFirstSetBit(u64 b) {

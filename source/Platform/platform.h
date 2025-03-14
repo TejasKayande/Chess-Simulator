@@ -80,6 +80,10 @@ struct Event {
         int x, y;
         
     } mouse;
+
+    struct Menu {
+        
+    };
 };
 
 int init(void);
@@ -89,7 +93,7 @@ void pollEvents(Event &event);
 bool windowShouldClose(void);
 
 void fillRect(int x, int y, int w, int h, Color c);
-void renderTexture(int x, int y, TexID tex_id);
+void renderTexture(int x, int y, int w, int h, TexID tex_id);
 void renderFont(const char* text, int x, int y, FontType f, Color c);
 
 void clear(void);
@@ -97,7 +101,7 @@ void present(void);
 
 void playSound(SoundType st);
 
-void getWindowDimention(int *width, int *height);
+void getWindowDimention(int *w, int *h);
 
 int getFirstSetBit(u64 b);
    

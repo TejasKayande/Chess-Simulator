@@ -19,6 +19,10 @@ internal bool handleMouse(void) {
         G_vs.selected_square = Chess::OFF_SQUARE;
         G_vs.legal_squares = U64(0);
 
+        // TODO(Tejas): this is only for debugging, remove this!!!
+        Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
+        printf("(%d, %d)\n", clicked_square.rank, clicked_square.file);
+
         was_a_mouse_event = true;
 
     } break;
@@ -61,12 +65,15 @@ internal bool handleMouse(void) {
 
         if (G_vs.legal_squares & clicked_square_mask) {
 
-            Chess::move(G_board, &move);
-            Chess::changeTurn(G_board);
+            if (move.from != Chess::OFF_SQUARE && move.to != Chess::OFF_SQUARE) {
 
-            if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
-            if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
-            if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
+                Chess::move(G_board, &move);
+                Chess::changeTurn(G_board);
+
+                if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
+                if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
+                if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
+            }
         }
 
         G_vs.selected_square = Chess::OFF_SQUARE;
@@ -109,6 +116,18 @@ internal bool handleKeyboard(void) {
 
     } break;
 
+    case Key::PREVIOUS_MOVE: {
+
+        was_a_keyboard_event = true;
+
+    } break;
+
+    case Key::NEXT_MOVE: {
+
+        was_a_keyboard_event = true;
+
+    } break;
+
     default: break;
 
     }
@@ -139,17 +158,19 @@ int main(void) {
         return -1;
     }
 
+    char* STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk";
+
     G_board        = Chess::initBoard();
     G_board->turn  = Chess::Player::WHITE;
 
-    G_vs.is_board_flipped = false;
+    G_vs.is_board_flipped = true;
     G_vs.selected_square  = Chess::OFF_SQUARE;
     G_vs.theme.dark  = 0xFF316548;
     G_vs.theme.light = 0xFFE9E9E6;
     G_vs.theme.high  = 0xFF9999FF;
     G_vs.theme.legal = 0xFFCCFF99;
 
-    Chess::setFen(G_board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk");
+    Chess::setFen(G_board, STARTING_FEN);
 
     while (!Platform::windowShouldClose()) {
 
