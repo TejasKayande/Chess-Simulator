@@ -22,6 +22,16 @@ global const ColorTheme SUNSET_ORANGE   = { 0xFF8B4513, 0xFFFFE4B5, 0xFFFF6347, 
 global const ColorTheme MIDNIGHT_PURPLE = { 0xFF2E1A47, 0xFFD8C3A5, 0xFFB589D6, 0xAA8844FF };
 global const ColorTheme CYBER_NEON      = { 0xFF0A0A5F, 0xFFFFFFFF, 0xFFFF00FF, 0xAA00FF00 };
 
+internal void resetGame(void) {
+    
+    Chess::resetBoard(G_gameState.board);
+    G_gameState.winner = Chess::Player::NO_COLOR;
+
+    Chess::clearMove(&G_gameState.latest_move);
+
+    G_vs.latest_move_from = Chess::OFF_SQUARE;
+    G_vs.latest_move_to   = Chess::OFF_SQUARE;
+}
 
 internal bool handleMouse(void) {
 
@@ -120,8 +130,7 @@ internal bool handleKeyboard(void) {
     } break;
 
     case Key::RESET_BOARD: {
-        Chess::resetBoard(G_gameState.board);
-        G_gameState.winner = Chess::Player::NO_COLOR;
+        resetGame();
         was_a_keyboard_event = true;
     } break;
 
@@ -145,8 +154,7 @@ internal void handleMenuRequest() {
     switch (G_event.menu_request) {
 
     case MenuRequest::NEW_GAME: {
-        resetBoard(G_gameState.board);
-        G_gameState.winner = Chess::Player::NO_COLOR;
+        resetGame();
     } break;
 
     case MenuRequest::LOAD_FEN: {
@@ -238,15 +246,15 @@ internal void update() {
     was_an_event |= handleMouse();
 
     if (was_an_event) {
-        if (Chess::isCheckMate(G_gameState.board, Chess::Player::WHITE)) G_gameState.winner = Chess::Player::WHITE;
-        if (Chess::isCheckMate(G_gameState.board, Chess::Player::BLACK)) G_gameState.winner = Chess::Player::BLACK;
+        if (Chess::isCheckMate(G_gameState.board, Chess::Player::WHITE)) G_gameState.winner = Chess::Player::BLACK;
+        if (Chess::isCheckMate(G_gameState.board, Chess::Player::BLACK)) G_gameState.winner = Chess::Player::WHITE;
     }
 
     G_vs.latest_move_from = G_gameState.latest_move.from;
     G_vs.latest_move_to   = G_gameState.latest_move.to;
 }
 
-#ifdef _ON_WINDOWS_
+#ifndef _ON_WINDOWS_
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {

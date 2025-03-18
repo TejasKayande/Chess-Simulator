@@ -232,7 +232,7 @@ int Platform::init(void) {
     // G_window.width  = 1200;
     // G_window.height = 1000;
     G_window.width  = 600;
-    G_window.height = 680;
+    G_window.height = 620;
     G_window.name   = "Chess Simulator";
 
     HINSTANCE hInstance = GetModuleHandle(NULL);

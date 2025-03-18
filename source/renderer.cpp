@@ -144,7 +144,7 @@ internal void renderFileCoord(Square s) {
 void renderBoard(Board *board, VisualSetting &vs) {
 
     G_boardInfo.x_offset    = 0;
-    G_boardInfo.y_offset    = 60;
+    G_boardInfo.y_offset    = 0;
     G_boardInfo.square_size = 75;
     G_boardInfo.texture_dim = G_boardInfo.square_size;
     G_boardInfo.is_flipped  = vs.is_board_flipped;
@@ -230,13 +230,18 @@ void renderBoard(Board *board, VisualSetting &vs) {
 
 void renderWinner(Player player) {
 
-    if (player == Player::WHITE) {
-        renderFont("Black in in Checkmate!", 10, 10, FontType::LARGE, 0xFFFFFF00);
-    }
+    int w, h;
+    Platform::getWindowDimention(&w, &h);
+    // NOTE(Tejas): this is for a fog effect
+    Platform::fillRect(0, 0, w, h, 0xCC999999);
 
-    if (player == Player::BLACK) {
-        renderFont("White in in Checkmate!", 10, 10, FontType::LARGE, 0xFFFFFF00);
-    }
+    // TODO(Tejas): Remove the hard coded values here
+
+    if (player == Player::WHITE)
+        renderFont("Black is in Checkmate!", 110, 300, FontType::LARGE, 0xFF000000);
+
+    if (player == Player::BLACK)
+        renderFont("White is in Checkmate!", 110, 300, FontType::LARGE, 0xFF000000);
 }
 
 Square pixelToBoard(int x, int y, bool is_flipped) {

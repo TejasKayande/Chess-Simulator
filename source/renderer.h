@@ -33,6 +33,8 @@ struct VisualSetting {
     // mouse coords to draw the texture of selected piece
     int mousex;
     int mousey;
+
+    char *log_text;
 };
 
 void renderBoard(Chess::Board *board, VisualSetting &vs);
