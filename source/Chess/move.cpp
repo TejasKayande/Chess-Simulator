@@ -411,12 +411,18 @@ void Chess::move(Board *board, Move *move) {
 
     }
 
+    move->fen = getFen(board);
 
     if (p_to != EMPTY_SQUARE) move->type = MoveType::CAPTURE;
     move->captured_piece = p_to;
 
     removePiece(board, move->from);
     setPiece(board, move->to, move->piece);
+}
+
+void Chess::clearMove(Move *move) {
+    if (move->fen != NULL) free(move->fen);
+    memset(move, 0, sizeof(Move));
 }
 
 void Chess::undoMove(Board *board, Move move) {
@@ -432,6 +438,7 @@ BitBoard Chess::getValidSquares(Board *board, Square square, Piece piece) {
     BitBoard valid = U64(0);
 
     switch (piece.type) {
+
     case PType::PAWN:
         valid = getPawnValidSquares(board, square, piece.color);
         break;

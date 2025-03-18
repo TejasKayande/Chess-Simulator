@@ -47,6 +47,21 @@ internal void fillSquare(Square square, Color color) {
     Platform::fillRect(x, y, G_boardInfo.square_size, G_boardInfo.square_size, color);
 }
 
+internal void outlineSquare(Square square, f32 line_thinkness, Color color) {
+
+    if (square == OFF_SQUARE) return;
+
+    if (G_boardInfo.is_flipped) {
+        square.rank = (MAX_RANK - 1) - square.rank;
+        square.file = (MAX_RANK - 1) - square.file;
+    }
+
+    int x = square.file * G_boardInfo.square_size + G_boardInfo.x_offset;
+    int y = square.rank * G_boardInfo.square_size + G_boardInfo.y_offset;
+
+    Platform::drawRect(x, y, G_boardInfo.square_size, G_boardInfo.square_size, line_thinkness, color);
+}
+
 internal void renderPieceOnSquare(Square square, Piece piece) {
 
     if (G_boardInfo.is_flipped) {
@@ -129,7 +144,7 @@ internal void renderFileCoord(Square s) {
 void renderBoard(Board *board, VisualSetting &vs) {
 
     G_boardInfo.x_offset    = 0;
-    G_boardInfo.y_offset    = 0;
+    G_boardInfo.y_offset    = 60;
     G_boardInfo.square_size = 75;
     G_boardInfo.texture_dim = G_boardInfo.square_size;
     G_boardInfo.is_flipped  = vs.is_board_flipped;
@@ -163,28 +178,37 @@ void renderBoard(Board *board, VisualSetting &vs) {
         for (int file = 0; file < MAX_FILE; file++) {
 
             Square current_square = { rank, file };
-            Piece piece = getPieceAt(board, current_square);
+            Piece  piece          = getPieceAt(board, current_square);
 
             Chess::BitBoard mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(rank, file));
 
             if (vs.selected_square != OFF_SQUARE) {
 
-                if (vs.legal_squares & mask && vs.selected_square != OFF_SQUARE)
+                if (vs.legal_squares & mask && vs.selected_square != OFF_SQUARE && vs.highlight_legal_moves)
                     fillSquare(current_square, vs.theme.legal);
 
-                if (vs.selected_square == current_square)
+                if (vs.selected_square == current_square && vs.highlight_selected_square)
                     fillSquare(vs.selected_square, vs.theme.high);
             }
 
+            if (vs.highlight_latest_move) {
+
+                if (current_square == vs.latest_move_from) {
+                    outlineSquare(current_square, 5.0f, 0xFFFFFF00);
+                }
+
+                if (current_square == vs.latest_move_to) {
+                    outlineSquare(current_square, 5.0f, 0xFFFFFF00);
+                }
+            }
 
             if (vs.selected_square != current_square)
                 renderPieceOnSquare(current_square, piece);
 
-            if (isCheck && piece == Piece { PType::KING, board->turn })
+            if (isCheck && piece == Piece { PType::KING, board->turn } && vs.highlight_check)
                 fillSquare(king_pos, 0x99FF0000);
         }
     }
-
 
     // NOTE(Tejas): the selected piece follows the cursor around
     if (vs.selected_square != OFF_SQUARE) {
@@ -202,6 +226,17 @@ void renderBoard(Board *board, VisualSetting &vs) {
     //         fillSquare(square, 0x99FF0000);
     //     }
     // }
+}
+
+void renderWinner(Player player) {
+
+    if (player == Player::WHITE) {
+        renderFont("Black in in Checkmate!", 10, 10, FontType::LARGE, 0xFFFFFF00);
+    }
+
+    if (player == Player::BLACK) {
+        renderFont("White in in Checkmate!", 10, 10, FontType::LARGE, 0xFFFFFF00);
+    }
 }
 
 Square pixelToBoard(int x, int y, bool is_flipped) {

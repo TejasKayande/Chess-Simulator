@@ -34,7 +34,7 @@ Board* Chess::initBoard(void) {
     // TODO(Tejas): add memory pool in Platform Layer
     Board *board = (Board*)malloc(sizeof(Board));
     if (board == NULL) {
-        printf("Couldn't allocate memory to Board\n");
+        Platform::error("Couldn't allocate memory to Board");
         return NULL;
     }
 
@@ -150,7 +150,8 @@ void Chess::setFen(Board *board, char *fen) {
             case 'r': setPiece(board, Square{rank, file}, BLACK_ROOK);   break;
             case 'q': setPiece(board, Square{rank, file}, BLACK_QUEEN);  break;
             case 'k': setPiece(board, Square{rank, file}, BLACK_KING);   break;
-                // TODO(Tejas): add invalid piece handling
+
+            // TODO(Tejas): add invalid piece handling
             default: break;
             }
 
@@ -161,8 +162,81 @@ void Chess::setFen(Board *board, char *fen) {
 
 char* Chess::getFen(Board *board) {
 
-    (void*)(board);
-    return NULL;
+    char* fen = (char*)malloc(sizeof(char) * 100);
+    int index = 0;
+
+    bool empty_square_found = false;
+    int temp_count = 0;
+
+    for (int rank = MAX_RANK - 1; rank >= 0; rank--) {
+
+        for (int file = 0; file < MAX_FILE; file++) {
+
+            Square square = { rank, file };
+            Piece  piece  = getPieceAt(board, square);
+
+            if (file == 0 && rank != MAX_RANK - 1) fen[index++] = '/';
+
+            if (piece == EMPTY_SQUARE) {
+
+                temp_count++;
+                empty_square_found = true;
+
+                if (!(file == MAX_FILE - 1)) {
+                    empty_square_found = true;
+                    continue;
+                }
+            }
+
+            if (empty_square_found) {
+                fen[index++] = (char)(temp_count + '0');
+                empty_square_found = false;
+                temp_count = 0;
+            }
+
+            if (piece == WHITE_PAWN)   fen[index++] = 'P';
+            if (piece == WHITE_KNIGHT) fen[index++] = 'N';
+            if (piece == WHITE_BISHOP) fen[index++] = 'B';
+            if (piece == WHITE_ROOK)   fen[index++] = 'R';
+            if (piece == WHITE_QUEEN)  fen[index++] = 'Q';
+            if (piece == WHITE_KING)   fen[index++] = 'K';
+            if (piece == BLACK_PAWN)   fen[index++] = 'p';
+            if (piece == BLACK_KNIGHT) fen[index++] = 'n';
+            if (piece == BLACK_BISHOP) fen[index++] = 'b';
+            if (piece == BLACK_ROOK)   fen[index++] = 'r';
+            if (piece == BLACK_QUEEN)  fen[index++] = 'q';
+            if (piece == BLACK_KING)   fen[index++] = 'k';
+        }
+    }
+
+    fen[index++] = ' ';
+
+    if (board->turn == Player::WHITE) fen[index++] = 'w';
+    if (board->turn == Player::BLACK) fen[index++] = 'b';
+
+    fen[index++] = ' ';
+
+    if (!board->white.king_moved) {
+
+        if (!board->white.qrook_moved)
+            fen[index++] = 'Q';
+
+        if (!board->white.krook_moved)
+            fen[index++] = 'K';
+    }
+
+    if (!board->black.king_moved) {
+
+        if (!board->black.qrook_moved)
+            fen[index++] = 'q';
+
+        if (!board->black.krook_moved)
+            fen[index++] = 'k';
+    }
+
+    fen[index] = '\0';
+
+    return fen;
 }
 
 Piece Chess::getPieceAt(Board *board, Square square) {

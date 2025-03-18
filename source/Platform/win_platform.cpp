@@ -2,9 +2,6 @@
 #include "base.h"
 #include "platform.h"
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include <mmsystem.h>
 
 #include <wincodec.h>
@@ -18,21 +15,22 @@ using namespace Platform;
 
 #define ID_FILE_NEW_GAME 5010
 #define ID_FILE_LOAD_FEN 5020
+#define ID_FILE_GET_FEN  5030
 #define ID_FILE_QUIT     5040
 
-#define ID_VIEW_FLIP_BOARD                6001
-#define ID_VIEW_THEME_ONE                 6011
-#define ID_VIEW_THEME_TWO                 6012
-#define ID_VIEW_THEME_THREE               6013
-#define ID_VIEW_THEME_FOUR                6014
-#define ID_VIEW_THEME_FIVE                6015
-#define ID_VIEW_HIGHLIGHT_LEGAL_MOVES     6002
-#define ID_VIEW_HIGHLIGHT_SELECTED_SQUARE 6003
-#define ID_VIEW_HIGHLIGHT_LATEST_MOVE     6004
+#define ID_VIEW_FLIP_BOARD                6010
+#define ID_VIEW_THEME_ONE                 6021
+#define ID_VIEW_THEME_TWO                 6022
+#define ID_VIEW_THEME_THREE               6023
+#define ID_VIEW_THEME_FOUR                6024
+#define ID_VIEW_THEME_FIVE                6025
+#define ID_VIEW_HIGHLIGHT_LEGAL_MOVES     6030
+#define ID_VIEW_HIGHLIGHT_SELECTED_SQUARE 6040
+#define ID_VIEW_HIGHLIGHT_LATEST_MOVE     6050
+#define ID_VIEW_HIGHLIGHT_CHECK           6060
 
-#define ID_HELP_ABOUT    7003
-#define ID_HELP_KEYBINDS 7004
-
+#define ID_HELP_ABOUT    7010
+#define ID_HELP_KEYBINDS 7020
 
 struct KeyState {
 
@@ -42,10 +40,6 @@ struct KeyState {
     bool prev_move_down;
     bool next_move_down;
     bool latest_move_down;
-    bool toggle_menu_down;
-    bool prev_item_down;
-    bool next_item_down;
-    bool action_down;
 
     // mouse
     bool lmouse_down;
@@ -70,7 +64,10 @@ struct Direct2D {
     ID2D1HwndRenderTarget *target;
     ID2D1SolidColorBrush  *brush;
     IDWriteFactory        *write;
+
+    IDWriteTextFormat     *sm_font;
     IDWriteTextFormat     *nr_font;
+    IDWriteTextFormat     *lg_font;
 };
 
 global Window   G_window;
@@ -78,6 +75,8 @@ global Direct2D G_direct2D;
 
 global KeyState G_keyState;
 global Textures G_textures;
+
+global MenuRequest G_menuRequest;
 
 internal bool keyReleased(int key) {
 
@@ -116,30 +115,6 @@ internal bool keyReleased(int key) {
             return result;
         } 
 
-        if (key == Key::TOGGLE_MENU) {
-            result = G_keyState.toggle_menu_down;
-            G_keyState.toggle_menu_down = false;
-            return result;
-        } 
-
-        if (key == Key::PREVIOUS_ITEM) {
-            result = G_keyState.prev_item_down;
-            G_keyState.prev_item_down = false;
-            return result;
-        } 
-
-        if (key == Key::NEXT_ITEM) {
-            result = G_keyState.next_item_down;
-            G_keyState.next_item_down = false;
-            return result;
-        } 
-
-        if (key == Key::ACTION) {
-            result = G_keyState.action_down;
-            G_keyState.action_down = false;
-            return result;
-        } 
-
         if (key == Mouse::LCLICK) {
             result = G_keyState.lmouse_down;
             G_keyState.lmouse_down = false;
@@ -166,14 +141,26 @@ internal LRESULT WINAPI WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
         switch(LOWORD(wParam)) {
 
-        case ID_FILE_NEW_GAME: {} break;
+        case ID_FILE_NEW_GAME: G_menuRequest = MenuRequest::NEW_GAME; break;
+        case ID_FILE_LOAD_FEN: G_menuRequest = MenuRequest::LOAD_FEN; break;
+        case ID_FILE_GET_FEN:  G_menuRequest = MenuRequest::GET_FEN;  break;
+        case ID_FILE_QUIT:     G_window.running = false;              break;
 
-        case ID_FILE_LOAD_FEN: {} break;
+        case ID_VIEW_FLIP_BOARD:  G_menuRequest = MenuRequest::FLIP_BOARD;  break;
+        case ID_VIEW_THEME_ONE:   G_menuRequest = MenuRequest::THEME_ONE;   break;
+        case ID_VIEW_THEME_TWO:   G_menuRequest = MenuRequest::THEME_TWO;   break;
+        case ID_VIEW_THEME_THREE: G_menuRequest = MenuRequest::THEME_THREE; break;
+        case ID_VIEW_THEME_FOUR:  G_menuRequest = MenuRequest::THEME_FOUR;  break;
+        case ID_VIEW_THEME_FIVE:  G_menuRequest = MenuRequest::THEME_FIVE;  break;
 
-        case ID_FILE_QUIT: {
-            G_window.running = false;
-        } break;
-            
+        case ID_VIEW_HIGHLIGHT_LEGAL_MOVES:     G_menuRequest = MenuRequest::TOGGLE_LEGAL_HIGHLIGHT;    break;
+        case ID_VIEW_HIGHLIGHT_SELECTED_SQUARE: G_menuRequest = MenuRequest::TOGGLE_SELECTED_HIGHLIGHT; break;
+        case ID_VIEW_HIGHLIGHT_LATEST_MOVE:     G_menuRequest = MenuRequest::TOGGLE_LATEST_HIGHLIGHT;   break;
+        case ID_VIEW_HIGHLIGHT_CHECK:           G_menuRequest = MenuRequest::TOGGLE_CHECK_HIGHLIGHT;   break;
+
+        case ID_HELP_ABOUT:    G_menuRequest = MenuRequest::ABOUT; break;
+        case ID_HELP_KEYBINDS: G_menuRequest = MenuRequest::KEYBINDS; break;
+
         }
 
     } break;
@@ -244,8 +231,8 @@ int Platform::init(void) {
 
     // G_window.width  = 1200;
     // G_window.height = 1000;
-    G_window.width  = 800;
-    G_window.height = 820;
+    G_window.width  = 600;
+    G_window.height = 680;
     G_window.name   = "Chess Simulator";
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -305,26 +292,29 @@ int Platform::init(void) {
         HMENU help_menu = CreatePopupMenu();
 
         // file menu
-        AppendMenu(file_menu, MF_STRING, ID_FILE_NEW_GAME, "New Game \t X");
-        AppendMenu(file_menu, MF_STRING, ID_FILE_LOAD_FEN, "Load FEN");
-        AppendMenu(file_menu, MF_STRING, ID_FILE_QUIT    , "Quit");
+        AppendMenu(file_menu, MF_STRING, ID_FILE_NEW_GAME  , "New Game \t X");
+        AppendMenu(file_menu, MF_DISABLED, ID_FILE_LOAD_FEN, "Load FEN");
+        AppendMenu(file_menu, MF_STRING, ID_FILE_GET_FEN   , "Get FEN");
+        AppendMenu(file_menu, MF_STRING, ID_FILE_QUIT      , "Quit");
 
         // view menu
         AppendMenu(view_menu, MF_STRING, ID_VIEW_FLIP_BOARD, "Flip Board \t F");
         HMENU theme_menu = CreatePopupMenu();
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_ONE   , "One");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_TWO   , "Two");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_THREE , "Three");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FOUR  , "Four");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FIVE  , "Five");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_ONE   , "Nature Green");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_TWO   , "Ocean Blue");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_THREE , "Sunset Orange");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FOUR  , "Midnight Purple");
+        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FIVE  , "Cyber Neon");
         AppendMenu(view_menu , MF_POPUP , (UINT_PTR)theme_menu, "Theme");
 
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LEGAL_MOVES,     "Highlight Legal Moves");
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_SELECTED_SQUARE, "Highlight Selected Square");
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LATEST_MOVE,     "Highlight Latest Move");
+        AppendMenu(view_menu, MF_SEPARATOR, 0, NULL);
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LEGAL_MOVES    , "toggle highlighting legal moves");
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_SELECTED_SQUARE, "toggle highlighting selected square");
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LATEST_MOVE    , "toggle highlighting latest move");
+        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_CHECK          , "toggle highlighting check");
 
         // help menu
-        AppendMenu(help_menu, MF_STRING, ID_HELP_ABOUT, "About");
+        AppendMenu(help_menu, MF_STRING, ID_HELP_ABOUT   , "About");
         AppendMenu(help_menu, MF_STRING, ID_HELP_KEYBINDS, "Keybinds");
 
         // final menu
@@ -354,11 +344,24 @@ int Platform::init(void) {
                                 __uuidof(IDWriteFactory),
                                 (IUnknown**)&G_direct2D.write);
 
+
+            G_direct2D.write->CreateTextFormat(L"Consolas", NULL,
+                                              DWRITE_FONT_WEIGHT_REGULAR,
+                                              DWRITE_FONT_STYLE_NORMAL,
+                                              DWRITE_FONT_STRETCH_NORMAL,
+                                              16.0f, L"en-us", &G_direct2D.sm_font);
+
             G_direct2D.write->CreateTextFormat(L"Consolas", NULL,
                                               DWRITE_FONT_WEIGHT_REGULAR,
                                               DWRITE_FONT_STYLE_NORMAL,
                                               DWRITE_FONT_STRETCH_NORMAL,
                                               22.0f, L"en-us", &G_direct2D.nr_font);
+
+            G_direct2D.write->CreateTextFormat(L"Consolas", NULL,
+                                              DWRITE_FONT_WEIGHT_REGULAR,
+                                              DWRITE_FONT_STYLE_NORMAL,
+                                              DWRITE_FONT_STRETCH_NORMAL,
+                                              32.0f, L"en-us", &G_direct2D.lg_font);
 
             G_direct2D.nr_font->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
             G_direct2D.nr_font->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -467,6 +470,10 @@ void Platform::pollEvents(Event &event) {
     // NOTE(Tejas): clearing event every frame
     memset(&event, 0, sizeof(Event));
 
+    // menu request
+    event.menu_request = G_menuRequest;
+    G_menuRequest = MenuRequest::NONE;
+
     // Mouse input
     POINT mouse_point;
     GetCursorPos(&mouse_point);
@@ -501,10 +508,6 @@ void Platform::pollEvents(Event &event) {
     if (GetAsyncKeyState(Key::PREVIOUS_MOVE) & pressed) G_keyState.prev_move_down   = true;
     if (GetAsyncKeyState(Key::NEXT_MOVE)     & pressed) G_keyState.next_move_down   = true;
     if (GetAsyncKeyState(Key::LATEST_MOVE)   & pressed) G_keyState.latest_move_down = true;
-    if (GetAsyncKeyState(Key::TOGGLE_MENU)   & pressed) G_keyState.toggle_menu_down = true;
-    if (GetAsyncKeyState(Key::PREVIOUS_ITEM) & pressed) G_keyState.prev_item_down   = true;
-    if (GetAsyncKeyState(Key::NEXT_ITEM)     & pressed) G_keyState.next_item_down   = true;
-    if (GetAsyncKeyState(Key::ACTION)        & pressed) G_keyState.action_down      = true;
 
     if (GetAsyncKeyState(0x31) & pressed) {          // 1
         event.kbd.type       = Key::PROMOTE_TO;
@@ -528,27 +531,34 @@ void Platform::pollEvents(Event &event) {
 
     if (keyReleased(Key::FLIP_BOARD))    event.kbd.type = Key::FLIP_BOARD;
     if (keyReleased(Key::RESET_BOARD))   event.kbd.type = Key::RESET_BOARD;
-    if (keyReleased(Key::TOGGLE_MENU))   event.kbd.type = Key::TOGGLE_MENU;
     if (keyReleased(Key::PREVIOUS_MOVE)) event.kbd.type = Key::PREVIOUS_MOVE;
     if (keyReleased(Key::NEXT_MOVE))     event.kbd.type = Key::NEXT_MOVE;
     if (keyReleased(Key::LATEST_MOVE))   event.kbd.type = Key::LATEST_MOVE;
-    if (keyReleased(Key::PREVIOUS_ITEM)) event.kbd.type = Key::PREVIOUS_ITEM;
-    if (keyReleased(Key::NEXT_ITEM))     event.kbd.type = Key::NEXT_ITEM;
-    if (keyReleased(Key::ACTION))        event.kbd.type = Key::ACTION;
 }
 
 void Platform::clear(void) {
     
     G_direct2D.target->BeginDraw();
-    G_direct2D.target->Clear(D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.3f)); 
+    G_direct2D.target->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f)); 
 }
 
 void Platform::present(void) {
     
     HRESULT hr = G_direct2D.target->EndDraw();
     if (FAILED(hr)) {
-        printf("Failed EndDraw!\n");
+        MessageBoxA(NULL, "Failed EndDraw!", G_window.name, MB_ICONERROR);
     }
+}
+
+void Platform::drawRect(int x, int y, int w, int h, f32 lt, Color c) {
+
+    f32 a = ((c >> 24) & 0xFF) / 255.0f;
+    f32 r = ((c >> 16) & 0xFF) / 255.0f;
+    f32 g = ((c >>  8) & 0xFF) / 255.0f;
+    f32 b = ((c >>  0) & 0xFF) / 255.0f;
+
+    G_direct2D.brush->SetColor(D2D1::ColorF(r, g, b, a));
+    G_direct2D.target->DrawRectangle(D2D1::RectF((f32)x, (f32)y, (f32)(x + w), (f32)(y + h)), G_direct2D.brush, lt);
 }
 
 void Platform::fillRect(int x, int y, int w, int h, Color c) {
@@ -588,11 +598,11 @@ void Platform::renderTexture(int x, int y, int w, int h, TexID tex_id) {
 void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     IDWriteTextFormat* font = NULL;
+    // TODO(Tejas): add remaining fonts
     if (f == FontType::VERY_SMALL) return; 
-    // TODO(Tejas): add these fonts
-    if (f == FontType::SMALL) return;
-    if (f == FontType::NORMAL) font = G_direct2D.nr_font;
-    if (f == FontType::LARGE) return;
+    if (f == FontType::SMALL)      font = G_direct2D.sm_font;
+    if (f == FontType::NORMAL)     font = G_direct2D.nr_font;
+    if (f == FontType::LARGE)      font = G_direct2D.lg_font;
     if (f == FontType::VERY_LARGE) return;
 
     if (font == NULL) return;
@@ -601,9 +611,12 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
     if (len == 0) return;
 
     wchar_t* wideText = (wchar_t*)malloc(len * sizeof(wchar_t));
-    if (!wideText) return;
+    if (wideText == NULL) return;
 
-    MultiByteToWideChar(CP_UTF8, 0, text, -1, wideText, len);
+    if (MultiByteToWideChar(CP_UTF8, 0, text, -1, wideText, len) == 0) {
+        free(wideText);
+        return;
+    }
 
     f32 a = ((c >> 24) & 0xFF) / 255.0f;
     f32 r = ((c >> 16) & 0xFF) / 255.0f;
@@ -633,3 +646,36 @@ int Platform::getFirstSetBit(u64 b) {
 
     return -1;
 }
+
+void Platform::error(char* message) {
+
+    MessageBoxA(NULL, message, G_window.name, MB_ICONERROR);
+}
+
+void Platform::information(char* message) {
+
+    MessageBoxA(NULL, message, G_window.name, MB_ICONINFORMATION);
+}
+
+void Platform::setClipboard(char *str) {
+
+    if (!OpenClipboard(NULL)) return;
+    EmptyClipboard();
+
+    size_t len = strlen(str);
+    HGLOBAL msg_mem = GlobalAlloc(GMEM_MOVEABLE, len); // Allocate memory
+
+    if (msg_mem == NULL) {
+        CloseClipboard();
+        return;
+    }
+
+    memcpy(GlobalLock(msg_mem), str, len);
+    GlobalUnlock(msg_mem);
+
+    SetClipboardData(CF_TEXT, msg_mem);
+    CloseClipboard();
+
+    MessageBoxA(NULL, "Fen Copied to Clipboard", G_window.name, MB_ICONINFORMATION);
+}
+

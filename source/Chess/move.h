@@ -32,6 +32,8 @@ struct Move {
 void move(Board *board, Move *move);
 void undoMove(Board *board, Move move);
 
+void clearMove(Move *move);
+
 BitBoard getValidSquares(Board *board, Square square, Piece piece);
 BitBoard getAttackingSquares(Board *board, Player player);
 BitBoard getCastlingSquares(Board *board, Player player);
