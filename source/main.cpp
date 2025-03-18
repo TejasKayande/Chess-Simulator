@@ -157,8 +157,8 @@ int main(void) {
         printf("There was an error initializing the platform layer\n");
         return -1;
     }
-
-    char* STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk";
+    char* STARTING_FEN = "8/8/8/4p1K1/2k1P3/8/8/8 b";
+    // char* STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk";
 
     G_board        = Chess::initBoard();
     G_board->turn  = Chess::Player::WHITE;

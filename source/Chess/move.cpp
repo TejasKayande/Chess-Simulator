@@ -689,6 +689,8 @@ bool Chess::isInCheck(Board *board, Player player) {
 
 bool Chess::isCheckMate(Board *board, Player player) {
 
+    if (!isInCheck(board, player)) return false;
+
     Square king_pos = getKingPosition(board, player);
 
     bool is_checkmate = true;
