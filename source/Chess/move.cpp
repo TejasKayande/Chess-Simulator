@@ -433,6 +433,52 @@ void Chess::undoMove(Board *board, Move move) {
 
     setPiece(board, move.from, move.piece);
     setPiece(board, move.to, move.captured_piece);
+
+    switch (move.piece.type) {
+        
+    case PType::KING: {
+
+        if (!(move.type == MoveType::CASTLE)) return;
+
+        Piece  rook      = { };
+        Square rook_from = { };
+        Square rook_to   = { };
+
+        if (move.player == Player::WHITE) rook = WHITE_ROOK;   
+        if (move.player == Player::BLACK) rook = BLACK_ROOK;   
+
+        if (move.castle_side == Side::KING_SIDE) {
+            rook_from = { move.to.rank, 0 };
+            rook_to   = { move.to.rank, move.to.file + 1 };
+        }
+
+        if (move.castle_side == Side::QUEEN_SIDE) {
+            rook_from = { move.to.rank, 7 };
+            rook_to   = { move.to.rank, move.to.file - 1 };
+        }
+
+        setPiece(board, rook_from, rook);
+        setPiece(board, rook_to, EMPTY_SQUARE);
+
+        if (rook == WHITE_ROOK) {
+            board->white.king_moved = false;
+            if (move.castle_side == Side::KING_SIDE)
+                board->white.krook_moved = false;
+            if (move.castle_side == Side::QUEEN_SIDE)
+                board->white.qrook_moved = false;
+        }
+
+        if (rook == BLACK_ROOK) {
+            board->black.king_moved = false;
+            if (move.castle_side == Side::KING_SIDE)
+                board->black.krook_moved = false;
+            if (move.castle_side == Side::QUEEN_SIDE)
+                board->black.qrook_moved = false;
+        }
+        
+    } break;
+
+    }
 }
 
 BitBoard Chess::getValidSquares(Board *board, Square square, Piece piece) {
@@ -665,7 +711,7 @@ Square Chess::getKingPosition(Board *board, Player player) {
 
     case Player::WHITE: {
 
-        int index = GET_FIST_SET_BIT(board->wKing);
+        int index = GET_FIRST_SET_BIT(board->wKing);
         Square s = GET_SQUARE_FROM_INDEX(index);
         return s;
 
@@ -673,7 +719,7 @@ Square Chess::getKingPosition(Board *board, Player player) {
 
     case Player::BLACK: {
 
-        int index = GET_FIST_SET_BIT(board->bKing);
+        int index = GET_FIRST_SET_BIT(board->bKing);
         Square s = GET_SQUARE_FROM_INDEX(index);
         return s;
 

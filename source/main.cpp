@@ -1,6 +1,7 @@
 
 #include "Platform/platform.h"
 #include "Chess/chess.h"
+#include "Engine/engine.h"
 
 #include "renderer.h"
 
@@ -76,6 +77,21 @@ internal bool handleMouse(void) {
 
         if (G_vs.selected_square == Chess::OFF_SQUARE) break;
 
+        // Chess::Move move = Engine::getFirstMove(*G_gameState.board);
+        // printf("from: (%d, %d), to: (%d, %d)\n", move.from.rank, move.from.file, move.to.rank, move.to.file);
+
+        // if (!(move.from == Chess::OFF_SQUARE || move.from == Chess::OFF_SQUARE)) {
+        //     Chess::move(G_gameState.board, &move);
+        //     Chess::changeTurn(G_gameState.board);
+
+        //     if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
+        //     if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
+        //     if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
+
+        //     Chess::clearMove(&G_gameState.latest_move);
+        //     G_gameState.latest_move = move;
+        // }
+
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
 
         Chess::Move move = { };
@@ -135,10 +151,14 @@ internal bool handleKeyboard(void) {
     } break;
 
     case Key::PREVIOUS_MOVE: {
+        Chess::undoMove(G_gameState.board, G_gameState.latest_move);
+        Chess::changeTurn(G_gameState.board);
         was_a_keyboard_event = true;
     } break;
 
     case Key::NEXT_MOVE: {
+        int number_of_moves = Engine::moveGenerationTest(*G_gameState.board, 1);
+        printf("%d\n", number_of_moves);
         was_a_keyboard_event = true;
     } break;
 
@@ -241,7 +261,7 @@ internal void update() {
 
     handleMenuRequest();
 
-    bool was_an_event = false;
+    bool was_an_event = true;
     was_an_event |= handleKeyboard();
     was_an_event |= handleMouse();
 

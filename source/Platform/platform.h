@@ -16,7 +16,7 @@
 #define RIGHT_CLICK_KEY_CODE 0x02
 
 #define U64(x) (x##ULL)
-#define GET_FIST_SET_BIT(x) (Platform::getFirstSetBit(x))
+#define GET_FIRST_SET_BIT(x) (Platform::getFirstSetBit(x))
 
 namespace Platform {
 

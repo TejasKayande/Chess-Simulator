@@ -14,7 +14,7 @@
 #define COLOR_COUNT 2
 
 #define GET_INDEX_FROM_SQUARE(rank, file) ((rank) * (MAX_FILE) + (file))
-#define GET_SQUARE_FROM_INDEX(index)      (Square {((index) / (MAX_RANK)), ((index) % (MAX_FILE))})
+#define GET_SQUARE_FROM_INDEX(index)      (Chess::Square {((index) / (MAX_RANK)), ((index) % (MAX_FILE))})
 #define CREATE_BITBOARD_MASK(index)       (U64(1) << (index))
 
 namespace Chess {
