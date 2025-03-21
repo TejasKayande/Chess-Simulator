@@ -705,6 +705,30 @@ BitBoard Chess::getLegalSquares(Board *board, Square square, Piece piece) {
     return legal;
 }
 
+void Chess::promotePawn(Board *board, PType promote_to) {
+
+    // NOTE(Tejas): assuming that the black pawns can never be on the 8th rank
+    //              and white pawns can never be on the 2st rank.
+    for (int file = 0; file < MAX_FILE; file++) {
+
+        Square s_rank1 = { 0, file };
+        Square s_rank8 = { 7, file };
+
+        Piece p_rank1 = getPieceAt(board, s_rank1);
+        Piece p_rank8 = getPieceAt(board, s_rank8);
+
+        if (p_rank1.type == PType::PAWN) {
+            Piece promotion_piece = { promote_to, p_rank1.color };
+            setPiece(board, s_rank1, promotion_piece);
+        }
+
+        if (p_rank8.type == PType::PAWN) {
+            Piece promotion_piece = { promote_to, p_rank8.color };
+            setPiece(board, s_rank8, promotion_piece);
+        }
+    }
+}
+
 Square Chess::getKingPosition(Board *board, Player player) {
 
     switch (player) {

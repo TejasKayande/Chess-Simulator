@@ -594,7 +594,7 @@ void Platform::renderTexture(int x, int y, int w, int h, TexID tex_id) {
     if (tex_id == BQUEEN)  tex = G_textures.bQueen;
     if (tex_id == BKING)   tex = G_textures.bKing;
 
-    ASSERT(tex == NULL, "Texture was null for the piece ID!");
+    if (tex == NULL) error("Texture was null for a piece ID!");
 
     D2D1_RECT_F rect = { (f32)x, (f32)y, (f32)(x + w), (f32)(y + h) };
     G_direct2D.target->DrawBitmap(tex, rect);

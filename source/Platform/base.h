@@ -5,8 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
 // Figuring out the Operating System
 #if defined(_WIN32)
@@ -41,17 +39,6 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #define SUCCESS(x) ((x) ? false : true)
-
-#if _ON_WINDOWS_
-#define DEBUG_BREAK __debugbreak()
-#endif
-
-#define ASSERT(x, m, ...)                       \
-    if (x) {                                    \
-        printf(m, __VA_ARGS__);                 \
-        printf("\n");                           \
-        DEBUG_BREAK;                            \
-    }  
 
 typedef int8_t    i8;
 typedef uint8_t   u8;

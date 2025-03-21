@@ -12,6 +12,8 @@ struct GameState {
     Chess::Move   latest_move;
     Chess::Player winner;
 
+    Chess::PType promote_to;
+
     enum GameMode {
         NORMAL = 0,
         THREE_CHECKS,
@@ -184,6 +186,19 @@ internal bool handleKeyboard(void) {
         was_a_keyboard_event = true;
     } break;
 
+    case Key::PROMOTE_TO: {
+
+        switch (G_event.kbd.promote_to) {
+        case Promote::QUEEN:  G_gameState.promote_to = Chess::PType::QUEEN;  break;
+        case Promote::ROOK:   G_gameState.promote_to = Chess::PType::ROOK;   break;
+        case Promote::BISHOP: G_gameState.promote_to = Chess::PType::BISHOP; break;
+        case Promote::KNIGHT: G_gameState.promote_to = Chess::PType::KNIGHT; break;
+        }
+
+        was_a_keyboard_event = true;
+
+    } break;
+
     case Key::PREVIOUS_MOVE: {
         // Chess::undoMove(G_gameState.board, G_gameState.latest_move);
         // Chess::changeTurn(G_gameState.board);
@@ -287,7 +302,6 @@ internal void handleMenuRequest() {
     case MenuRequest::ABOUT: {
         char* about_text = 
             "Chess Simulator\n"
-            "Version 1.0\n"
             "Developed by Tejas, Sammed and Abhishek\n"
             "----------------------------------------------------------------------\n"
             "This application is a project assignment submitted to the\n"
@@ -301,9 +315,10 @@ internal void handleMenuRequest() {
             "KeyBinds\n"
             "1. Flip Board (F) \n"
             "2. Reset Board (X)\n"
-            "3. Hold \'1\' before promoting, to promote to Rook\n"
-            "4. Hold \'2\' before promoting, to promote to Bishop\n"
-            "5. Hold \'3\' before promoting, to promote to Knight\n ";
+            "3. Hold \'1\' before promoting, to promote to Queen\n"
+            "4. Hold \'2\' before promoting, to promote to Rook\n"
+            "5. Hold \'3\' before promoting, to promote to Bishop\n"
+            "6. Hold \'4\' before promoting, to promote to Knight\n ";
         Platform::information(keybind_info);
     } break;
 
@@ -319,16 +334,21 @@ internal void update() {
 
     handleMenuRequest();
 
+    // NOTE(Tejas): by default the pawn promotes to a queen
+    //              this is just resetting that.
+    G_gameState.promote_to = Chess::PType::QUEEN;
+
     bool was_an_event = false;
 
     // NOTE(Tejas): keyboard shortcuts are allowed if the controls are paused
     //              as they dont affect the game state (except for resetting the game)
     was_an_event |= handleKeyboard();
-    if (!G_gameState.pause_control) {
-        was_an_event |= handleMouse();
-    }
+    if (!G_gameState.pause_control) was_an_event |= handleMouse();
 
     if (was_an_event) {
+
+        // NOTE(Tejas): if any pawns are on the final ranks, promote them
+        Chess::promotePawn(G_gameState.board, G_gameState.promote_to);
 
         if (Chess::isCheckMate(G_gameState.board, G_gameState.board->turn)) {
             G_gameState.winner = (G_gameState.board->turn == Chess::Player::WHITE)
@@ -355,7 +375,7 @@ internal void update() {
     G_vs.paused_control   = G_gameState.pause_control;
 }
 
-#ifdef _ON_WINDOWS_
+#ifndef _ON_WINDOWS_
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {

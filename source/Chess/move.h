@@ -39,6 +39,8 @@ BitBoard getAttackingSquares(Board *board, Player player);
 BitBoard getCastlingSquares(Board *board, Player player);
 BitBoard getLegalSquares(Board *board, Square square, Piece piece);
 
+void promotePawn(Board *board, PType promote_to);
+
 Square getKingPosition(Board *board, Player player);
 
 bool isInCheck(Board *board, Player player);
