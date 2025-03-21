@@ -6,6 +6,8 @@
 
 using namespace Chess;
 
+// TODO(Tejas): do something better than this
+global int G_logMessageCounter = 0;
 
 struct BoardInfo {
 
@@ -141,6 +143,23 @@ internal void renderFileCoord(Square s) {
     Platform::renderFont(b, x, y, FontType::NORMAL, c);
 }
 
+internal void logMessage(char* log_message) {
+
+    if (log_message == NULL) return;
+
+    int w, h;
+    Platform::getWindowDimention(&w, &h);
+    // NOTE(Tejas): this is for a fog effect
+    Platform::fillRect(0, 0, w, h, 0xDDFFFFFF);
+
+    Color text_color = 0xFF009999;
+
+    // TODO(Tejas): remove the hard coded values
+    Platform::renderFont(log_message, 180, 280, FontType::NORMAL, text_color);
+
+    G_logMessageCounter++;
+}
+
 void renderBoard(Board *board, VisualSetting &vs) {
 
     G_boardInfo.x_offset    = 0;
@@ -150,7 +169,6 @@ void renderBoard(Board *board, VisualSetting &vs) {
     G_boardInfo.is_flipped  = vs.is_board_flipped;
     G_boardInfo.theme       = vs.theme;
 
-    bool isCheck    = Chess::isInCheck(board, board->turn);
     Square king_pos = getKingPosition(board, board->turn);
 
     // NOTE(Tejas): The rendering is done in stages to layer everything for
@@ -205,7 +223,10 @@ void renderBoard(Board *board, VisualSetting &vs) {
             if (vs.selected_square != current_square)
                 renderPieceOnSquare(current_square, piece);
 
-            if (isCheck && piece == Piece { PType::KING, board->turn } && vs.highlight_check)
+            if (vs.is_white_in_check && piece == WHITE_KING && vs.highlight_check)
+                fillSquare(king_pos, 0x99FF0000);
+
+            if (vs.is_black_in_check && piece == BLACK_KING && vs.highlight_check)
                 fillSquare(king_pos, 0x99FF0000);
         }
     }
@@ -226,6 +247,24 @@ void renderBoard(Board *board, VisualSetting &vs) {
     //         fillSquare(square, 0x99FF0000);
     //     }
     // }
+
+    if (vs.paused_control) {
+        int w, h;
+        Platform::getWindowDimention(&w, &h);
+
+        // NOTE(Tejas): this is for a fog effect
+        Platform::fillRect(0, 0, w, h, 0xCCAAAAAA);
+
+        Color text_color = 0xFF992222;
+        // TODO(Tejas): remove the hard coded values
+        Platform::renderFont("Board Controls Paused", 180, 280, FontType::NORMAL, text_color);
+    }
+
+    logMessage(vs.log_message);
+    if (G_logMessageCounter >= 100) {
+        G_logMessageCounter = 0;
+        vs.log_message = NULL;   
+    }
 }
 
 void renderWinner(Player player) {
@@ -233,15 +272,16 @@ void renderWinner(Player player) {
     int w, h;
     Platform::getWindowDimention(&w, &h);
     // NOTE(Tejas): this is for a fog effect
-    Platform::fillRect(0, 0, w, h, 0xCC999999);
+    Platform::fillRect(0, 0, w, h, 0xCCAAAAAA);
+
+    Color text_color = 0xFF000000;
 
     // TODO(Tejas): Remove the hard coded values here
-
     if (player == Player::WHITE)
-        renderFont("Black is in Checkmate!", 110, 300, FontType::LARGE, 0xFF000000);
+        renderFont("White is the Winner!", 130, 300, FontType::LARGE, text_color);
 
     if (player == Player::BLACK)
-        renderFont("White is in Checkmate!", 110, 300, FontType::LARGE, 0xFF000000);
+        renderFont("Black is the Winner!", 130, 300, FontType::LARGE, text_color);
 }
 
 Square pixelToBoard(int x, int y, bool is_flipped) {

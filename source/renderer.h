@@ -14,12 +14,17 @@ struct ColorTheme {
 
 struct VisualSetting {
 
+    bool paused_control;
+
     bool highlight_legal_moves;
     bool highlight_selected_square;
     bool highlight_latest_move;
     bool highlight_check;
 
     bool is_board_flipped; 
+
+    bool is_white_in_check;
+    bool is_black_in_check;
 
     Chess::Square   selected_square; // To highlight selected square on the board
     Chess::BitBoard legal_squares;   // To highlight the legal squares on the board for the selected piece
@@ -34,7 +39,7 @@ struct VisualSetting {
     int mousex;
     int mousey;
 
-    char *log_text;
+    char* log_message;
 };
 
 void renderBoard(Chess::Board *board, VisualSetting &vs);

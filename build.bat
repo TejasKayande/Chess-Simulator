@@ -17,8 +17,7 @@ set SOURCE_FILES=..\source\main.cpp ^
                  ..\source\renderer.cpp ^
                  ..\source\Platform\platform.cpp ^
                  ..\source\Chess\board.cpp ^
-                 ..\source\Chess\move.cpp ^
-                 ..\source\engine\engine.cpp
+                 ..\source\Chess\move.cpp
 
 set OUTPUT_EXE=chess.exe
 

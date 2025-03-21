@@ -774,3 +774,20 @@ bool Chess::isCheckMate(Board *board, Player player) {
 
     return is_checkmate;
 }
+
+bool Chess::isKingInCenter(Board *board, Player player) {
+
+    Square center1 = { 3, 3 };
+    Square center2 = { 3, 4 };
+    Square center3 = { 4, 3 };
+    Square center4 = { 4, 4 };
+
+    Square king_pos = getKingPosition(board, player);
+
+    if (king_pos == center1) return true;
+    if (king_pos == center2) return true;
+    if (king_pos == center3) return true;
+    if (king_pos == center4) return true;
+
+    return false;
+}

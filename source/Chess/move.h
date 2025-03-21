@@ -44,6 +44,8 @@ Square getKingPosition(Board *board, Player player);
 bool isInCheck(Board *board, Player player);
 bool isCheckMate(Board *board, Player player);
 
+bool isKingInCenter(Board *board, Player player);
+
 } // namespace Chess
 
 typedef Chess::Move::MoveType MoveType;

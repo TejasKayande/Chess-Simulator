@@ -53,6 +53,7 @@ struct Event {
             PREVIOUS_MOVE = 0x25,   // Left arrow key
             NEXT_MOVE     = 0x27,   // Right Arrow Key 
             LATEST_MOVE   = 0x26,   // UP Arrow key
+            TOGGLE_PAUSE  = 0x1B,   // The Esc Key
         } type;
 
         enum Promote {
@@ -81,27 +82,35 @@ struct Event {
     enum MenuRequest {
         NONE = 0,
 
+        ID_MENU = 101,
+
         // file menu
-        NEW_GAME,
-        LOAD_FEN,
-        GET_FEN,
-        QUIT,
+        NEW_GAME = 5010,
+        LOAD_FEN = 5020,
+        GET_FEN  = 5030,
+        QUIT     = 5040,
 
         // view menu
-        FLIP_BOARD,
-        THEME_ONE,
-        THEME_TWO,
-        THEME_THREE,
-        THEME_FOUR,
-        THEME_FIVE,
-        TOGGLE_LEGAL_HIGHLIGHT,
-        TOGGLE_LATEST_HIGHLIGHT,
-        TOGGLE_SELECTED_HIGHLIGHT,
-        TOGGLE_CHECK_HIGHLIGHT,
+        FLIP_BOARD                = 6010,
+        THEME_ONE                 = 6021,
+        THEME_TWO                 = 6022,
+        THEME_THREE               = 6023,
+        THEME_FOUR                = 6024,
+        THEME_FIVE                = 6025,
+        TOGGLE_LEGAL_HIGHLIGHT    = 6030,
+        TOGGLE_LATEST_HIGHLIGHT   = 6040,
+        TOGGLE_SELECTED_HIGHLIGHT = 6050,
+        TOGGLE_CHECK_HIGHLIGHT    = 6060,
+
+        // variants menu
+        PLAY_NORMAL           = 7010,
+        PLAY_THREE_CHECKS     = 7020,
+        PLAY_KING_OF_THE_HILL = 7030,
+        PLAY_FOG_OF_WAR       = 7040,
 
         // help menu
-        ABOUT,
-        KEYBINDS
+        ABOUT    = 8010,
+        KEYBINDS = 8020
 
     } menu_request;
 };

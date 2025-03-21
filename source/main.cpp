@@ -1,15 +1,29 @@
 
 #include "Platform/platform.h"
 #include "Chess/chess.h"
-#include "Engine/engine.h"
 
 #include "renderer.h"
 
 struct GameState {
+
+    bool pause_control; // controls if the player can interact with the board
+
     Chess::Board *board;
     Chess::Move   latest_move;
     Chess::Player winner;
+
+    enum GameMode {
+        NORMAL = 0,
+        THREE_CHECKS,
+        KING_OF_THE_HILL,
+        FOG_OF_WAR
+    } game_mode;
+
+    // this is for the three checks varient
+    int white_check_counter;
+    int black_check_counter; 
 };
+typedef GameState::GameMode GameMode;
 
 global GameState G_gameState;
 
@@ -26,12 +40,63 @@ global const ColorTheme CYBER_NEON      = { 0xFF0A0A5F, 0xFFFFFFFF, 0xFFFF00FF, 
 internal void resetGame(void) {
     
     Chess::resetBoard(G_gameState.board);
+    G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner = Chess::Player::NO_COLOR;
 
     Chess::clearMove(&G_gameState.latest_move);
 
-    G_vs.latest_move_from = Chess::OFF_SQUARE;
-    G_vs.latest_move_to   = Chess::OFF_SQUARE;
+    G_vs.latest_move_from  = Chess::OFF_SQUARE;
+    G_vs.latest_move_to    = Chess::OFF_SQUARE;
+    G_vs.is_white_in_check = false;
+    G_vs.is_black_in_check = false;
+
+    G_gameState.pause_control = false;
+
+    G_gameState.white_check_counter = 0;
+    G_gameState.black_check_counter = 0; 
+
+    if (G_gameState.game_mode == GameMode::NORMAL)           G_vs.log_message = "Playing Normal Mode";
+    if (G_gameState.game_mode == GameMode::THREE_CHECKS)     G_vs.log_message = "Playing Three Checks";
+    if (G_gameState.game_mode == GameMode::KING_OF_THE_HILL) G_vs.log_message = "Playing King of the Hill";
+    if (G_gameState.game_mode == GameMode::FOG_OF_WAR)       G_vs.log_message = "Playing Fog of War";
+}
+
+internal void makeMove(Chess::Square from, Chess::Square to) {
+
+    Chess::Move move = { };
+    move.from = from;
+    move.to   = to;
+
+    if (move.from != Chess::OFF_SQUARE && move.to != Chess::OFF_SQUARE) {
+
+        Chess::move(G_gameState.board, &move);
+        Chess::changeTurn(G_gameState.board);
+
+        if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
+        if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
+        if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
+
+        Chess::clearMove(&G_gameState.latest_move);
+        G_gameState.latest_move = move;
+
+
+        if (G_gameState.game_mode == GameMode::THREE_CHECKS) {
+
+            if (Chess::isInCheck(G_gameState.board, Chess::Player::WHITE) && G_gameState.board->turn == Chess::Player::WHITE) {
+                G_vs.is_white_in_check = true;
+                G_gameState.white_check_counter++;
+            } else {
+                G_vs.is_white_in_check = false;
+            }
+
+            if (Chess::isInCheck(G_gameState.board, Chess::Player::BLACK) && G_gameState.board->turn == Chess::Player::BLACK) {
+                G_gameState.black_check_counter++;
+                G_vs.is_black_in_check = true;
+            } else {
+                G_vs.is_black_in_check = false;
+            }
+        }
+    }
 }
 
 internal bool handleMouse(void) {
@@ -77,43 +142,12 @@ internal bool handleMouse(void) {
 
         if (G_vs.selected_square == Chess::OFF_SQUARE) break;
 
-        // Chess::Move move = Engine::getFirstMove(*G_gameState.board);
-        // printf("from: (%d, %d), to: (%d, %d)\n", move.from.rank, move.from.file, move.to.rank, move.to.file);
-
-        // if (!(move.from == Chess::OFF_SQUARE || move.from == Chess::OFF_SQUARE)) {
-        //     Chess::move(G_gameState.board, &move);
-        //     Chess::changeTurn(G_gameState.board);
-
-        //     if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
-        //     if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
-        //     if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
-
-        //     Chess::clearMove(&G_gameState.latest_move);
-        //     G_gameState.latest_move = move;
-        // }
-
         Chess::Square clicked_square = pixelToBoard(G_event.mouse.x, G_event.mouse.y, G_vs.is_board_flipped);
-
-        Chess::Move move = { };
-        move.from   = G_vs.selected_square;
-        move.to     = clicked_square;
-
-        Chess::BitBoard clicked_square_mask = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(move.to.rank, move.to.file));
+        Chess::BitBoard clicked_square_mask
+            = CREATE_BITBOARD_MASK(GET_INDEX_FROM_SQUARE(clicked_square.rank, clicked_square.file));
 
         if (G_vs.legal_squares & clicked_square_mask) {
-
-            if (move.from != Chess::OFF_SQUARE && move.to != Chess::OFF_SQUARE) {
-
-                Chess::move(G_gameState.board, &move);
-                Chess::changeTurn(G_gameState.board);
-
-                if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
-                if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
-                if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
-
-                Chess::clearMove(&G_gameState.latest_move);
-                G_gameState.latest_move = move;
-            }
+            makeMove(G_vs.selected_square, clicked_square);
         }
 
         G_vs.selected_square = Chess::OFF_SQUARE;
@@ -151,14 +185,17 @@ internal bool handleKeyboard(void) {
     } break;
 
     case Key::PREVIOUS_MOVE: {
-        Chess::undoMove(G_gameState.board, G_gameState.latest_move);
-        Chess::changeTurn(G_gameState.board);
+        // Chess::undoMove(G_gameState.board, G_gameState.latest_move);
+        // Chess::changeTurn(G_gameState.board);
         was_a_keyboard_event = true;
     } break;
 
     case Key::NEXT_MOVE: {
-        int number_of_moves = Engine::moveGenerationTest(*G_gameState.board, 1);
-        printf("%d\n", number_of_moves);
+        was_a_keyboard_event = true;
+    } break;
+
+    case Key::TOGGLE_PAUSE: {
+        G_gameState.pause_control = (G_gameState.pause_control) ? false : true;
         was_a_keyboard_event = true;
     } break;
 
@@ -178,6 +215,7 @@ internal void handleMenuRequest() {
     } break;
 
     case MenuRequest::LOAD_FEN: {
+        // TODO(Tejas): this function needs an input box, implement that
     } break;
 
     case MenuRequest::GET_FEN: {
@@ -226,6 +264,26 @@ internal void handleMenuRequest() {
         G_vs.highlight_check = (G_vs.highlight_check) ? false : true;
     } break;
 
+    case MenuRequest::PLAY_NORMAL: {
+        G_gameState.game_mode = GameMode::NORMAL;
+        resetGame();
+    } break;
+
+    case MenuRequest::PLAY_THREE_CHECKS : {
+        G_gameState.game_mode = GameMode::THREE_CHECKS;
+        resetGame();
+    } break;
+
+    case MenuRequest::PLAY_KING_OF_THE_HILL: {
+        G_gameState.game_mode = GameMode::KING_OF_THE_HILL;
+        resetGame();
+    } break;
+
+    case MenuRequest::PLAY_FOG_OF_WAR : {
+        G_gameState.game_mode = GameMode::FOG_OF_WAR;
+        resetGame();
+    } break;
+
     case MenuRequest::ABOUT: {
         char* about_text = 
             "Chess Simulator\n"
@@ -261,20 +319,43 @@ internal void update() {
 
     handleMenuRequest();
 
-    bool was_an_event = true;
+    bool was_an_event = false;
+
+    // NOTE(Tejas): keyboard shortcuts are allowed if the controls are paused
+    //              as they dont affect the game state (except for resetting the game)
     was_an_event |= handleKeyboard();
-    was_an_event |= handleMouse();
+    if (!G_gameState.pause_control) {
+        was_an_event |= handleMouse();
+    }
 
     if (was_an_event) {
-        if (Chess::isCheckMate(G_gameState.board, Chess::Player::WHITE)) G_gameState.winner = Chess::Player::BLACK;
-        if (Chess::isCheckMate(G_gameState.board, Chess::Player::BLACK)) G_gameState.winner = Chess::Player::WHITE;
+
+        if (Chess::isCheckMate(G_gameState.board, G_gameState.board->turn)) {
+            G_gameState.winner = (G_gameState.board->turn == Chess::Player::WHITE)
+                                 ? Chess::Player::BLACK : Chess::Player::WHITE;
+        }
+
+        if (G_gameState.game_mode == GameMode::THREE_CHECKS) {
+            if (G_gameState.white_check_counter >= 3) G_gameState.winner = Chess::Player::BLACK;
+            if (G_gameState.black_check_counter >= 3) G_gameState.winner = Chess::Player::WHITE;
+        }
+
+        if (G_gameState.game_mode == GameMode::KING_OF_THE_HILL) {
+            if (Chess::isKingInCenter(G_gameState.board, Chess::Player::WHITE))
+                G_gameState.winner = Chess::Player::WHITE;
+            if (Chess::isKingInCenter(G_gameState.board, Chess::Player::BLACK))
+                G_gameState.winner = Chess::Player::BLACK;
+        }
     }
+
+    if (G_gameState.winner != Chess::Player::NO_COLOR) G_gameState.pause_control = true;
 
     G_vs.latest_move_from = G_gameState.latest_move.from;
     G_vs.latest_move_to   = G_gameState.latest_move.to;
+    G_vs.paused_control   = G_gameState.pause_control;
 }
 
-#ifndef _ON_WINDOWS_
+#ifdef _ON_WINDOWS_
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {
@@ -291,6 +372,10 @@ int main(void) {
 
     G_gameState.latest_move.from = Chess::OFF_SQUARE;
     G_gameState.latest_move.to   = Chess::OFF_SQUARE;
+
+    G_gameState.game_mode = GameMode::NORMAL;
+    G_gameState.white_check_counter = 0;
+    G_gameState.black_check_counter = 0;
 
     G_vs.is_board_flipped = true;
     G_vs.selected_square  = Chess::OFF_SQUARE;

@@ -10,28 +10,6 @@
 
 using namespace Platform;
 
-// Menu Items
-#define IDR_MYMENU   101
-
-#define ID_FILE_NEW_GAME 5010
-#define ID_FILE_LOAD_FEN 5020
-#define ID_FILE_GET_FEN  5030
-#define ID_FILE_QUIT     5040
-
-#define ID_VIEW_FLIP_BOARD                6010
-#define ID_VIEW_THEME_ONE                 6021
-#define ID_VIEW_THEME_TWO                 6022
-#define ID_VIEW_THEME_THREE               6023
-#define ID_VIEW_THEME_FOUR                6024
-#define ID_VIEW_THEME_FIVE                6025
-#define ID_VIEW_HIGHLIGHT_LEGAL_MOVES     6030
-#define ID_VIEW_HIGHLIGHT_SELECTED_SQUARE 6040
-#define ID_VIEW_HIGHLIGHT_LATEST_MOVE     6050
-#define ID_VIEW_HIGHLIGHT_CHECK           6060
-
-#define ID_HELP_ABOUT    7010
-#define ID_HELP_KEYBINDS 7020
-
 struct KeyState {
 
     // keyboard
@@ -40,6 +18,7 @@ struct KeyState {
     bool prev_move_down;
     bool next_move_down;
     bool latest_move_down;
+    bool toggle_pause_down;
 
     // mouse
     bool lmouse_down;
@@ -85,47 +64,58 @@ internal bool keyReleased(int key) {
     bool result = false;
 
     if (!(GetAsyncKeyState(key) & pressed)) {
-        if (key == Key::FLIP_BOARD) {
+
+        switch (key) {
+
+        case Key::FLIP_BOARD: {
             result = G_keyState.flip_board_down;
             G_keyState.flip_board_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Key::RESET_BOARD) {
+        case Key::RESET_BOARD: {
             result = G_keyState.reset_board_down;
             G_keyState.reset_board_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Key::PREVIOUS_MOVE) {
+        case Key::PREVIOUS_MOVE: {
             result = G_keyState.prev_move_down;
             G_keyState.prev_move_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Key::NEXT_MOVE) {
+        case Key::NEXT_MOVE: {
             result = G_keyState.next_move_down;
             G_keyState.next_move_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Key::LATEST_MOVE) {
+        case Key::LATEST_MOVE: {
             result = G_keyState.latest_move_down;
             G_keyState.latest_move_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Mouse::LCLICK) {
+        case Key::TOGGLE_PAUSE: {
+            result = G_keyState.toggle_pause_down;
+            G_keyState.toggle_pause_down = false;
+            return result;
+        } break;
+
+        case Mouse::LCLICK: {
             result = G_keyState.lmouse_down;
             G_keyState.lmouse_down = false;
             return result;
-        } 
+        } break;
 
-        if (key == Mouse::RCLICK) {
+        case Mouse::RCLICK: {
             result = G_keyState.rmouse_down;
             G_keyState.rmouse_down = false;
             return result;
-        } 
+        } break;
+
+        }
     }
 
     return result;
@@ -141,25 +131,30 @@ internal LRESULT WINAPI WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
         switch(LOWORD(wParam)) {
 
-        case ID_FILE_NEW_GAME: G_menuRequest = MenuRequest::NEW_GAME; break;
-        case ID_FILE_LOAD_FEN: G_menuRequest = MenuRequest::LOAD_FEN; break;
-        case ID_FILE_GET_FEN:  G_menuRequest = MenuRequest::GET_FEN;  break;
-        case ID_FILE_QUIT:     G_window.running = false;              break;
+        case MenuRequest::NEW_GAME: G_menuRequest = MenuRequest::NEW_GAME; break;
+        case MenuRequest::LOAD_FEN: G_menuRequest = MenuRequest::LOAD_FEN; break;
+        case MenuRequest::GET_FEN:  G_menuRequest = MenuRequest::GET_FEN;  break;
+        case MenuRequest::QUIT:     G_window.running = false;              break;
 
-        case ID_VIEW_FLIP_BOARD:  G_menuRequest = MenuRequest::FLIP_BOARD;  break;
-        case ID_VIEW_THEME_ONE:   G_menuRequest = MenuRequest::THEME_ONE;   break;
-        case ID_VIEW_THEME_TWO:   G_menuRequest = MenuRequest::THEME_TWO;   break;
-        case ID_VIEW_THEME_THREE: G_menuRequest = MenuRequest::THEME_THREE; break;
-        case ID_VIEW_THEME_FOUR:  G_menuRequest = MenuRequest::THEME_FOUR;  break;
-        case ID_VIEW_THEME_FIVE:  G_menuRequest = MenuRequest::THEME_FIVE;  break;
+        case MenuRequest::FLIP_BOARD:  G_menuRequest = MenuRequest::FLIP_BOARD;  break;
+        case MenuRequest::THEME_ONE:   G_menuRequest = MenuRequest::THEME_ONE;   break;
+        case MenuRequest::THEME_TWO:   G_menuRequest = MenuRequest::THEME_TWO;   break;
+        case MenuRequest::THEME_THREE: G_menuRequest = MenuRequest::THEME_THREE; break;
+        case MenuRequest::THEME_FOUR:  G_menuRequest = MenuRequest::THEME_FOUR;  break;
+        case MenuRequest::THEME_FIVE:  G_menuRequest = MenuRequest::THEME_FIVE;  break;
 
-        case ID_VIEW_HIGHLIGHT_LEGAL_MOVES:     G_menuRequest = MenuRequest::TOGGLE_LEGAL_HIGHLIGHT;    break;
-        case ID_VIEW_HIGHLIGHT_SELECTED_SQUARE: G_menuRequest = MenuRequest::TOGGLE_SELECTED_HIGHLIGHT; break;
-        case ID_VIEW_HIGHLIGHT_LATEST_MOVE:     G_menuRequest = MenuRequest::TOGGLE_LATEST_HIGHLIGHT;   break;
-        case ID_VIEW_HIGHLIGHT_CHECK:           G_menuRequest = MenuRequest::TOGGLE_CHECK_HIGHLIGHT;   break;
+        case MenuRequest::TOGGLE_LEGAL_HIGHLIGHT:    G_menuRequest = MenuRequest::TOGGLE_LEGAL_HIGHLIGHT;    break;
+        case MenuRequest::TOGGLE_SELECTED_HIGHLIGHT: G_menuRequest = MenuRequest::TOGGLE_SELECTED_HIGHLIGHT; break;
+        case MenuRequest::TOGGLE_LATEST_HIGHLIGHT:   G_menuRequest = MenuRequest::TOGGLE_LATEST_HIGHLIGHT;   break;
+        case MenuRequest::TOGGLE_CHECK_HIGHLIGHT:    G_menuRequest = MenuRequest::TOGGLE_CHECK_HIGHLIGHT;    break;
 
-        case ID_HELP_ABOUT:    G_menuRequest = MenuRequest::ABOUT; break;
-        case ID_HELP_KEYBINDS: G_menuRequest = MenuRequest::KEYBINDS; break;
+        case MenuRequest::PLAY_NORMAL:           G_menuRequest = MenuRequest::PLAY_NORMAL; break;
+        case MenuRequest::PLAY_THREE_CHECKS:     G_menuRequest = MenuRequest::PLAY_THREE_CHECKS; break;
+        case MenuRequest::PLAY_KING_OF_THE_HILL: G_menuRequest = MenuRequest::PLAY_KING_OF_THE_HILL; break;
+        case MenuRequest::PLAY_FOG_OF_WAR:       G_menuRequest = MenuRequest::PLAY_FOG_OF_WAR; break;
+
+        case MenuRequest::ABOUT:    G_menuRequest = MenuRequest::ABOUT; break;
+        case MenuRequest::KEYBINDS: G_menuRequest = MenuRequest::KEYBINDS; break;
 
         }
 
@@ -287,40 +282,48 @@ int Platform::init(void) {
 
         HMENU menu = CreateMenu();
 
-        HMENU file_menu = CreatePopupMenu();
-        HMENU view_menu = CreatePopupMenu();
-        HMENU help_menu = CreatePopupMenu();
+        HMENU file_menu     = CreatePopupMenu();
+        HMENU view_menu     = CreatePopupMenu();
+        HMENU variants_menu = CreatePopupMenu();
+        HMENU help_menu     = CreatePopupMenu();
 
         // file menu
-        AppendMenu(file_menu, MF_STRING, ID_FILE_NEW_GAME  , "New Game \t X");
-        AppendMenu(file_menu, MF_DISABLED, ID_FILE_LOAD_FEN, "Load FEN");
-        AppendMenu(file_menu, MF_STRING, ID_FILE_GET_FEN   , "Get FEN");
-        AppendMenu(file_menu, MF_STRING, ID_FILE_QUIT      , "Quit");
+        AppendMenu(file_menu, MF_STRING  , MenuRequest::NEW_GAME, "New Game \t X");
+        AppendMenu(file_menu, MF_DISABLED, MenuRequest::LOAD_FEN, "Load FEN");
+        AppendMenu(file_menu, MF_STRING  , MenuRequest::GET_FEN , "Get FEN");
+        AppendMenu(file_menu, MF_STRING  , MenuRequest::QUIT    , "Quit");
 
         // view menu
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_FLIP_BOARD, "Flip Board \t F");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::FLIP_BOARD, "Flip Board \t F");
         HMENU theme_menu = CreatePopupMenu();
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_ONE   , "Nature Green");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_TWO   , "Ocean Blue");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_THREE , "Sunset Orange");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FOUR  , "Midnight Purple");
-        AppendMenu(theme_menu, MF_STRING, ID_VIEW_THEME_FIVE  , "Cyber Neon");
+        AppendMenu(theme_menu, MF_STRING, MenuRequest::THEME_ONE  , "Nature Green");
+        AppendMenu(theme_menu, MF_STRING, MenuRequest::THEME_TWO  , "Ocean Blue");
+        AppendMenu(theme_menu, MF_STRING, MenuRequest::THEME_THREE, "Sunset Orange");
+        AppendMenu(theme_menu, MF_STRING, MenuRequest::THEME_FOUR , "Midnight Purple");
+        AppendMenu(theme_menu, MF_STRING, MenuRequest::THEME_FIVE , "Cyber Neon");
         AppendMenu(view_menu , MF_POPUP , (UINT_PTR)theme_menu, "Theme");
 
         AppendMenu(view_menu, MF_SEPARATOR, 0, NULL);
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LEGAL_MOVES    , "toggle highlighting legal moves");
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_SELECTED_SQUARE, "toggle highlighting selected square");
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_LATEST_MOVE    , "toggle highlighting latest move");
-        AppendMenu(view_menu, MF_STRING, ID_VIEW_HIGHLIGHT_CHECK          , "toggle highlighting check");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LEGAL_HIGHLIGHT   , "toggle highlighting legal moves");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_SELECTED_HIGHLIGHT, "toggle highlighting selected square");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LATEST_HIGHLIGHT  , "toggle highlighting latest move");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_CHECK_HIGHLIGHT   , "toggle highlighting check");
+
+        // variants menu
+        AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_NORMAL          , "Normal Mode");
+        AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_THREE_CHECKS    , "Three Checks");
+        AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_KING_OF_THE_HILL, "King of the Hill");
+        AppendMenu(variants_menu, MF_DISABLED, MenuRequest::PLAY_FOG_OF_WAR      , "Fog of War");
 
         // help menu
-        AppendMenu(help_menu, MF_STRING, ID_HELP_ABOUT   , "About");
-        AppendMenu(help_menu, MF_STRING, ID_HELP_KEYBINDS, "Keybinds");
+        AppendMenu(help_menu, MF_STRING, MenuRequest::ABOUT   , "About");
+        AppendMenu(help_menu, MF_STRING, MenuRequest::KEYBINDS, "Keybinds");
 
         // final menu
-        AppendMenu(menu, MF_POPUP, (UINT_PTR)file_menu, "File");
-        AppendMenu(menu, MF_POPUP, (UINT_PTR)view_menu, "View");
-        AppendMenu(menu, MF_POPUP, (UINT_PTR)help_menu, "Help");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)file_menu    , "File");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)view_menu    , "View");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)help_menu    , "Help");
+        AppendMenu(menu, MF_POPUP, (UINT_PTR)variants_menu, "Variants");
 
         SetMenu(G_window.handle, menu);
     }
@@ -497,17 +500,18 @@ void Platform::pollEvents(Event &event) {
         event.mouse.type = Mouse::RCLICK;
     }
 
-    if (keyReleased(LEFT_CLICK_KEY_CODE)) event.mouse.type = Mouse::LRELEASE;
+    if (keyReleased(LEFT_CLICK_KEY_CODE))  event.mouse.type = Mouse::LRELEASE;
     if (keyReleased(RIGHT_CLICK_KEY_CODE)) event.mouse.type = Mouse::RRELEASE;
 
     // Keyboard input
 
     // NOTE(Tejas): updating pressed keys for this frame
-    if (GetAsyncKeyState(Key::FLIP_BOARD)    & pressed) G_keyState.flip_board_down  = true;
-    if (GetAsyncKeyState(Key::RESET_BOARD)   & pressed) G_keyState.reset_board_down = true;
-    if (GetAsyncKeyState(Key::PREVIOUS_MOVE) & pressed) G_keyState.prev_move_down   = true;
-    if (GetAsyncKeyState(Key::NEXT_MOVE)     & pressed) G_keyState.next_move_down   = true;
-    if (GetAsyncKeyState(Key::LATEST_MOVE)   & pressed) G_keyState.latest_move_down = true;
+    if (GetAsyncKeyState(Key::FLIP_BOARD)    & pressed) G_keyState.flip_board_down   = true;
+    if (GetAsyncKeyState(Key::RESET_BOARD)   & pressed) G_keyState.reset_board_down  = true;
+    if (GetAsyncKeyState(Key::PREVIOUS_MOVE) & pressed) G_keyState.prev_move_down    = true;
+    if (GetAsyncKeyState(Key::NEXT_MOVE)     & pressed) G_keyState.next_move_down    = true;
+    if (GetAsyncKeyState(Key::LATEST_MOVE)   & pressed) G_keyState.latest_move_down  = true;
+    if (GetAsyncKeyState(Key::TOGGLE_PAUSE)  & pressed) G_keyState.toggle_pause_down = true;
 
     if (GetAsyncKeyState(0x31) & pressed) {          // 1
         event.kbd.type       = Key::PROMOTE_TO;
@@ -534,6 +538,7 @@ void Platform::pollEvents(Event &event) {
     if (keyReleased(Key::PREVIOUS_MOVE)) event.kbd.type = Key::PREVIOUS_MOVE;
     if (keyReleased(Key::NEXT_MOVE))     event.kbd.type = Key::NEXT_MOVE;
     if (keyReleased(Key::LATEST_MOVE))   event.kbd.type = Key::LATEST_MOVE;
+    if (keyReleased(Key::TOGGLE_PAUSE))  event.kbd.type = Key::TOGGLE_PAUSE;
 }
 
 void Platform::clear(void) {
@@ -624,7 +629,7 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
     f32 b = ((c >>  0) & 0xFF) / 255.0f;
     G_direct2D.brush->SetColor(D2D1::ColorF(r, g, b, a));
 
-    D2D1_RECT_F rect = D2D1::RectF((f32)x, (f32)y, (f32)(x + 500), (f32)(y + 500));
+    D2D1_RECT_F rect = D2D1::RectF((f32)x, (f32)y, (f32)(x + 600), (f32)(y + 600));
     G_direct2D.target->DrawText(wideText, (u32)wcslen(wideText), font, rect, G_direct2D.brush);
 
     free(wideText);
