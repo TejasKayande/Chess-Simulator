@@ -411,7 +411,7 @@ void Chess::move(Board *board, Move *move) {
 
     }
 
-    move->fen = getFen(board);
+    move->board = *board;
 
     if (p_to != EMPTY_SQUARE) move->type = MoveType::CAPTURE;
     move->captured_piece = p_to;
@@ -421,7 +421,6 @@ void Chess::move(Board *board, Move *move) {
 }
 
 void Chess::clearMove(Move *move) {
-    if (move->fen != NULL) free(move->fen);
     memset(move, 0, sizeof(Move));
     move->from = OFF_SQUARE;
     move->to   = OFF_SQUARE;

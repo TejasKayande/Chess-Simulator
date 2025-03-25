@@ -9,6 +9,7 @@ struct GameState {
     bool pause_control; // controls if the player can interact with the board
 
     Chess::Board *board;
+
     Chess::Move   latest_move;
     Chess::Player winner;
 
@@ -27,9 +28,7 @@ struct GameState {
 };
 typedef GameState::GameMode GameMode;
 
-global GameState G_gameState;
-
-// global Chess::Board   *G_gameState.board;
+global GameState       G_gameState;
 global Platform::Event G_event;
 global VisualSetting   G_vs;
 
@@ -45,7 +44,9 @@ internal void resetGame(void) {
     G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner = Chess::Player::NO_COLOR;
 
-    Chess::clearMove(&G_gameState.latest_move);
+    G_gameState.latest_move = { };
+    G_gameState.latest_move.from = Chess::OFF_SQUARE;
+    G_gameState.latest_move.to   = Chess::OFF_SQUARE;
 
     G_vs.latest_move_from  = Chess::OFF_SQUARE;
     G_vs.latest_move_to    = Chess::OFF_SQUARE;
@@ -80,7 +81,6 @@ internal void makeMove(Chess::Square from, Chess::Square to) {
 
         Chess::clearMove(&G_gameState.latest_move);
         G_gameState.latest_move = move;
-
 
         if (G_gameState.game_mode == GameMode::THREE_CHECKS) {
 
@@ -200,12 +200,17 @@ internal bool handleKeyboard(void) {
     } break;
 
     case Key::PREVIOUS_MOVE: {
-        // Chess::undoMove(G_gameState.board, G_gameState.latest_move);
-        // Chess::changeTurn(G_gameState.board);
+
         was_a_keyboard_event = true;
     } break;
 
     case Key::NEXT_MOVE: {
+
+        was_a_keyboard_event = true;
+    } break;
+
+    case Key::LATEST_MOVE: {
+
         was_a_keyboard_event = true;
     } break;
 
@@ -386,7 +391,8 @@ int main(void) {
         return -1;
     }
 
-    G_gameState.board       = Chess::initBoard();
+    G_gameState.board        = Chess::initBoard();
+
     G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner      = Chess::Player::NO_COLOR;
 
@@ -426,7 +432,7 @@ int main(void) {
         Platform::present();
     }
 
-    Chess::cleanUpBoard(&G_gameState.board);
+    Chess::cleanUpBoard(G_gameState.board);
     Platform::cleanUp();
 
     return 0;

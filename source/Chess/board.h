@@ -61,7 +61,7 @@ struct Board {
 };
 
 Board* initBoard(void);
-void   cleanUpBoard(Board **board);
+void   cleanUpBoard(Board *board);
 
 void setFen(Board *board, char* fen);
 char* getFen(Board *board);

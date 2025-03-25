@@ -46,10 +46,9 @@ Board* Chess::initBoard(void) {
     return board;
 }
 
-void Chess::cleanUpBoard(Board **board) {
+void Chess::cleanUpBoard(Board *board) {
 
-    free(*board);
-    *board = NULL;
+    if (board) free(board);
 }
 
 void Chess::setFen(Board *board, char *fen) {

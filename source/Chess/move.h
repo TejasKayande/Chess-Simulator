@@ -26,7 +26,7 @@ struct Move {
     Piece captured_piece;  // if the move was a caputer move, this holds what piece was captuered
     Side  castle_side;
 
-    char* fen;         // The FEN of the board after the move was made
+    Board board; // The board that holds the position after the move was made
 };
 
 void move(Board *board, Move *move);
