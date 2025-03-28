@@ -123,6 +123,7 @@ bool windowShouldClose(void);
 
 void fillRect(int x, int y, int w, int h, Color c);
 void drawRect(int x, int y, int w, int h, f32 lt, Color c);
+void drawLine(int x1, int y1, int x2, int y2, f32 lt, Color c);
 void renderTexture(int x, int y, int w, int h, TexID tex_id);
 void renderFont(const char* text, int x, int y, FontType f, Color c);
 

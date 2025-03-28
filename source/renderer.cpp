@@ -204,30 +204,24 @@ void renderBoard(Board *board, VisualSetting &vs) {
 
                 if (vs.legal_squares & mask && vs.selected_square != OFF_SQUARE && vs.highlight_legal_moves)
                     fillSquare(current_square, vs.theme.legal);
-
                 if (vs.selected_square == current_square && vs.highlight_selected_square)
                     fillSquare(vs.selected_square, vs.theme.high);
             }
 
             if (vs.highlight_latest_move) {
-
-                if (current_square == vs.latest_move_from) {
+                if (current_square == vs.latest_move_from)
                     outlineSquare(current_square, 5.0f, 0xFFFFFF00);
-                }
-
-                if (current_square == vs.latest_move_to) {
+                if (current_square == vs.latest_move_to)
                     outlineSquare(current_square, 5.0f, 0xFFFFFF00);
-                }
             }
+
+            if ((vs.is_white_in_check) && piece == WHITE_KING && vs.highlight_check)
+                fillSquare(king_pos, 0x99FF0000);
+            if ((vs.is_black_in_check) && piece == BLACK_KING && vs.highlight_check)
+                fillSquare(king_pos, 0x99FF0000);
 
             if (vs.selected_square != current_square)
                 renderPieceOnSquare(current_square, piece);
-
-            if (vs.is_white_in_check && piece == WHITE_KING && vs.highlight_check)
-                fillSquare(king_pos, 0x99FF0000);
-
-            if (vs.is_black_in_check && piece == BLACK_KING && vs.highlight_check)
-                fillSquare(king_pos, 0x99FF0000);
         }
     }
 

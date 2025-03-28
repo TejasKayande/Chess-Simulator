@@ -49,8 +49,8 @@ struct Direct2D {
     IDWriteTextFormat     *lg_font;
 };
 
-global Window   G_window;
-global Direct2D G_direct2D;
+global Window           G_window;
+global Direct2D         G_direct2D;
 
 global KeyState G_keyState;
 global Textures G_textures;
@@ -566,6 +566,20 @@ void Platform::drawRect(int x, int y, int w, int h, f32 lt, Color c) {
     G_direct2D.target->DrawRectangle(D2D1::RectF((f32)x, (f32)y, (f32)(x + w), (f32)(y + h)), G_direct2D.brush, lt);
 }
 
+void Platform::drawLine(int x1, int y1, int x2, int y2, f32 lt, Color c) {
+
+    f32 a = ((c >> 24) & 0xFF) / 255.0f;
+    f32 r = ((c >> 16) & 0xFF) / 255.0f;
+    f32 g = ((c >>  8) & 0xFF) / 255.0f;
+    f32 b = ((c >>  0) & 0xFF) / 255.0f;
+    
+    D2D1_POINT_2F p1 = { (f32)x1, (f32)y1 };
+    D2D1_POINT_2F p2 = { (f32)x2, (f32)y2 };
+
+    G_direct2D.brush->SetColor(D2D1::ColorF(r, g, b, a));
+    G_direct2D.target->DrawLine(p1, p2, G_direct2D.brush, lt, 0);
+}
+
 void Platform::fillRect(int x, int y, int w, int h, Color c) {
 
     f32 a = ((c >> 24) & 0xFF) / 255.0f;
@@ -612,6 +626,8 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     if (font == NULL) return;
 
+    // const wchar_t* wideText = L"test";
+
     int len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
     if (len == 0) return;
 
@@ -632,7 +648,7 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
     D2D1_RECT_F rect = D2D1::RectF((f32)x, (f32)y, (f32)(x + 600), (f32)(y + 600));
     G_direct2D.target->DrawText(wideText, (u32)wcslen(wideText), font, rect, G_direct2D.brush);
 
-    free(wideText);
+    // free(wideText);
 }
 
 void Platform::getWindowDimention(int *w, int *h) {
@@ -683,4 +699,3 @@ void Platform::setClipboard(char *str) {
 
     MessageBoxA(NULL, "Fen Copied to Clipboard", G_window.name, MB_ICONINFORMATION);
 }
-

@@ -44,6 +44,7 @@ internal void resetGame(void) {
     G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner = Chess::Player::NO_COLOR;
 
+
     G_gameState.latest_move = { };
     G_gameState.latest_move.from = Chess::OFF_SQUARE;
     G_gameState.latest_move.to   = Chess::OFF_SQUARE;
@@ -82,21 +83,18 @@ internal void makeMove(Chess::Square from, Chess::Square to) {
         Chess::clearMove(&G_gameState.latest_move);
         G_gameState.latest_move = move;
 
-        if (G_gameState.game_mode == GameMode::THREE_CHECKS) {
+        if (Chess::isInCheck(G_gameState.board, Chess::Player::WHITE) && G_gameState.board->turn == Chess::Player::WHITE) {
+            G_vs.is_white_in_check = true;
+            G_gameState.white_check_counter++;
+        } else {
+            G_vs.is_white_in_check = false;
+        }
 
-            if (Chess::isInCheck(G_gameState.board, Chess::Player::WHITE) && G_gameState.board->turn == Chess::Player::WHITE) {
-                G_vs.is_white_in_check = true;
-                G_gameState.white_check_counter++;
-            } else {
-                G_vs.is_white_in_check = false;
-            }
-
-            if (Chess::isInCheck(G_gameState.board, Chess::Player::BLACK) && G_gameState.board->turn == Chess::Player::BLACK) {
-                G_gameState.black_check_counter++;
-                G_vs.is_black_in_check = true;
-            } else {
-                G_vs.is_black_in_check = false;
-            }
+        if (Chess::isInCheck(G_gameState.board, Chess::Player::BLACK) && G_gameState.board->turn == Chess::Player::BLACK) {
+            G_gameState.black_check_counter++;
+            G_vs.is_black_in_check = true;
+        } else {
+            G_vs.is_black_in_check = false;
         }
     }
 }
@@ -380,7 +378,7 @@ internal void update() {
     G_vs.paused_control   = G_gameState.pause_control;
 }
 
-#ifndef _ON_WINDOWS_
+#ifdef _ON_WINDOWS_
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {
@@ -391,7 +389,7 @@ int main(void) {
         return -1;
     }
 
-    G_gameState.board        = Chess::initBoard();
+    G_gameState.board = Chess::initBoard();
 
     G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner      = Chess::Player::NO_COLOR;
