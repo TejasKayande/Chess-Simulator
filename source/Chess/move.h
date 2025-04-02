@@ -36,7 +36,6 @@ void clearMove(Move *move);
 
 BitBoard getValidSquares(Board *board, Square square, Piece piece);
 BitBoard getAttackingSquares(Board *board, Player player);
-BitBoard getCastlingSquares(Board *board, Player player);
 BitBoard getLegalSquares(Board *board, Square square, Piece piece);
 
 void promotePawn(Board *board, PType promote_to);

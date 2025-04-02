@@ -49,8 +49,8 @@ struct Direct2D {
     IDWriteTextFormat     *lg_font;
 };
 
-global Window           G_window;
-global Direct2D         G_direct2D;
+global Window   G_window;
+global Direct2D G_direct2D;
 
 global KeyState G_keyState;
 global Textures G_textures;
@@ -617,16 +617,11 @@ void Platform::renderTexture(int x, int y, int w, int h, TexID tex_id) {
 void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     IDWriteTextFormat* font = NULL;
-    // TODO(Tejas): add remaining fonts
-    if (f == FontType::VERY_SMALL) return; 
     if (f == FontType::SMALL)      font = G_direct2D.sm_font;
     if (f == FontType::NORMAL)     font = G_direct2D.nr_font;
     if (f == FontType::LARGE)      font = G_direct2D.lg_font;
-    if (f == FontType::VERY_LARGE) return;
 
     if (font == NULL) return;
-
-    // const wchar_t* wideText = L"test";
 
     int len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
     if (len == 0) return;
@@ -647,8 +642,6 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     D2D1_RECT_F rect = D2D1::RectF((f32)x, (f32)y, (f32)(x + 600), (f32)(y + 600));
     G_direct2D.target->DrawText(wideText, (u32)wcslen(wideText), font, rect, G_direct2D.brush);
-
-    // free(wideText);
 }
 
 void Platform::getWindowDimention(int *w, int *h) {

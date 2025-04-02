@@ -130,8 +130,8 @@ internal bool handleMouse(void) {
 
             G_vs.legal_squares = Chess::getLegalSquares(G_gameState.board, G_vs.selected_square, piece);
 
-            if (piece.type == Chess::PType::KING)
-                G_vs.legal_squares |= Chess::getCastlingSquares(G_gameState.board, G_gameState.board->turn);
+            // if (piece.type == Chess::PType::KING)
+            //     G_vs.legal_squares |= Chess::getCastlingSquares(G_gameState.board, G_gameState.board->turn);
         }
 
         was_a_mouse_event = true;
@@ -303,13 +303,7 @@ internal void handleMenuRequest() {
     } break;
 
     case MenuRequest::ABOUT: {
-        char* about_text = 
-            "Chess Simulator\n"
-            "Developed by Tejas, Sammed and Abhishek\n"
-            "----------------------------------------------------------------------\n"
-            "This application is a project assignment submitted to the\n"
-            "Department of Computer Science, S.B.E.S College of Science\n"
-            "Acedemic Year: 2024-2025";
+        char* about_text = "A Chess Simulator built using the C++ Programming Language\n";
         Platform::information(about_text);
     } break;
 

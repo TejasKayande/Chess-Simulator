@@ -28,11 +28,9 @@ enum TexID {
 };
 
 enum FontType {
-    VERY_SMALL,
     SMALL,
     NORMAL,
     LARGE,
-    VERY_LARGE
 };
 
 enum SoundType {
