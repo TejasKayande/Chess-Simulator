@@ -642,6 +642,8 @@ void Platform::renderFont(const char* text, int x, int y, FontType f, Color c) {
 
     D2D1_RECT_F rect = D2D1::RectF((f32)x, (f32)y, (f32)(x + 600), (f32)(y + 600));
     G_direct2D.target->DrawText(wideText, (u32)wcslen(wideText), font, rect, G_direct2D.brush);
+
+    free(wideText);
 }
 
 void Platform::getWindowDimention(int *w, int *h) {
