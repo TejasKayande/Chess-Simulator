@@ -4,6 +4,8 @@
 // NOTE(Tejas): In the renderer the boards rank and file start at 0
 //              for the pixel calculation purposes
 
+// TODO(Tejas): Seperate all the rendering components (logs, board and winner)
+
 using namespace Chess;
 
 // TODO(Tejas): do something better than this

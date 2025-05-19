@@ -8,8 +8,9 @@ if not exist "bin" (mkdir bin)
 
 pushd bin
 
-rem set FLAGS=/EHsc /MP /Zi /W4
-set FLAGS=/Ox /MP /GL
+set FLAGS=/fsanitize=address /EHsc /MP /Zi /W4
+rem set FLAGS=/Ox /MP /GL
+
 
 set SYSTEM_LIBS=user32.lib d2d1.lib windowscodecs.lib ole32.lib dwrite.lib winmm.lib
 

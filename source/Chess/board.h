@@ -34,8 +34,8 @@
                +---+---+---+---+---+---+---+---+
 
   NOTE(Tejas): Flip Board is a pure Visual effect, the white pawns always need
-               to promote at the 7th rank and the black pawns always need
-               to promote at the 0th rank.
+               to promote on the 7th rank and the black pawns always need
+               to promote on the 0th rank.
  */
 
 

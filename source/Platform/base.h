@@ -34,6 +34,9 @@
 #  define _CL_COMPILER_ 0
 #endif
 
+// NOTE(Tejas): This is a flag to disable the console window on release build
+#define REMOVE_CONSOLE 1
+
 #define ARRAY_COUNT(x) (sizeof(x) / sizeof(*(x)))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -54,6 +57,7 @@ typedef double   f64;
 typedef uint32_t Color;
 
 #define global   static 
+#define persist  static 
 #define internal static 
 
 #endif // _BASE_H_

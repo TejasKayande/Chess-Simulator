@@ -44,7 +44,6 @@ internal void resetGame(void) {
     G_gameState.board->turn = Chess::Player::WHITE;
     G_gameState.winner = Chess::Player::NO_COLOR;
 
-
     G_gameState.latest_move = { };
     G_gameState.latest_move.from = Chess::OFF_SQUARE;
     G_gameState.latest_move.to   = Chess::OFF_SQUARE;
@@ -129,9 +128,6 @@ internal bool handleMouse(void) {
             G_vs.selected_square = clicked_square;
 
             G_vs.legal_squares = Chess::getLegalSquares(G_gameState.board, G_vs.selected_square, piece);
-
-            // if (piece.type == Chess::PType::KING)
-            //     G_vs.legal_squares |= Chess::getCastlingSquares(G_gameState.board, G_gameState.board->turn);
         }
 
         was_a_mouse_event = true;
@@ -372,7 +368,7 @@ internal void update() {
     G_vs.paused_control   = G_gameState.pause_control;
 }
 
-#ifdef _ON_WINDOWS_
+#if REMOVE_CONSOLE
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {
