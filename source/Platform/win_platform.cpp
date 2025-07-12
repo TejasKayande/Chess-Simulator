@@ -38,6 +38,18 @@ struct Window {
     BOOL  running;
 };
 
+struct WindowDistribution {
+    u32 board_x;
+    u32 board_y;
+    u32 board_w;
+    u32 board_h;
+
+    u32 status_x;
+    u32 status_y;
+    u32 status_w;
+    u32 status_h;
+};
+
 struct Direct2D {
     ID2D1Factory          *factory;
     ID2D1HwndRenderTarget *target;
@@ -49,8 +61,9 @@ struct Direct2D {
     IDWriteTextFormat     *lg_font;
 };
 
-global Window   G_window;
-global Direct2D G_direct2D;
+global Window             G_window;
+global WindowDistribution G_wnd_distribution;
+global Direct2D           G_direct2D;
 
 global KeyState G_keyState;
 global Textures G_textures;
@@ -227,7 +240,8 @@ int Platform::init(void) {
     // G_window.width  = 1200;
     // G_window.height = 1000;
     G_window.width  = 600;
-    G_window.height = 620;
+    G_window.height = 645;
+
     G_window.name   = "Chess Simulator";
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -261,6 +275,16 @@ int Platform::init(void) {
 
     G_window.width = wr.right - wr.left;
     G_window.height = wr.bottom - wr.top;
+
+    G_wnd_distribution.board_x = 0;
+    G_wnd_distribution.board_y = 0;
+    G_wnd_distribution.board_w = G_window.width;
+    G_wnd_distribution.board_h = 600;
+
+    G_wnd_distribution.status_x = 0;
+    G_wnd_distribution.status_y = G_wnd_distribution.board_h;
+    G_wnd_distribution.status_w = G_window.width;
+    G_wnd_distribution.status_h = G_wnd_distribution.status_y;
 
     G_window.handle = CreateWindowExA(0, wc.lpszClassName, G_window.name,
                                       WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -650,6 +674,22 @@ void Platform::getWindowDimention(int *w, int *h) {
 
     *w = G_window.width;
     *h = G_window.height;
+}
+
+void Platform::getBoardDimention(int *x, int *y, int *w, int *h) {
+
+    *x = G_wnd_distribution.board_x;
+    *y = G_wnd_distribution.board_y;
+    *w = G_wnd_distribution.board_w;
+    *h = G_wnd_distribution.board_h;
+}
+
+void Platform::getStatusBarDimention(int *x, int *y, int *w, int *h) {
+    
+    *x = G_wnd_distribution.status_x;
+    *y = G_wnd_distribution.status_y;
+    *w = G_wnd_distribution.status_w;
+    *h = G_wnd_distribution.status_h;
 }
 
 int Platform::getFirstSetBit(u64 b) {

@@ -11,7 +11,6 @@ pushd bin
 set FLAGS=/fsanitize=address /EHsc /MP /Zi /W4
 rem set FLAGS=/Ox /MP /GL
 
-
 set SYSTEM_LIBS=user32.lib d2d1.lib windowscodecs.lib ole32.lib dwrite.lib winmm.lib
 
 set SOURCE_FILES=..\source\main.cpp ^

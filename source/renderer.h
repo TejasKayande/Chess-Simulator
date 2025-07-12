@@ -38,11 +38,17 @@ struct VisualSetting {
     // mouse coords to draw the texture of selected piece
     int mousex;
     int mousey;
+};
 
-    char* log_message;
+struct StatusBar {
+
+    char *mode;
+    char *turn;
+    bool check;
 };
 
 void renderBoard(Chess::Board *board, VisualSetting &vs);
+void renderStatusBar(StatusBar sb);
 void renderWinner(Chess::Player player);
 
 Chess::Square pixelToBoard(int x, int y, bool is_flipped);

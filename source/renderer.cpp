@@ -145,23 +145,6 @@ internal void renderFileCoord(Square s) {
     Platform::renderFont(b, x, y, FontType::NORMAL, c);
 }
 
-internal void logMessage(char* log_message) {
-
-    if (log_message == NULL) return;
-
-    int w, h;
-    Platform::getWindowDimention(&w, &h);
-    // NOTE(Tejas): this is for a fog effect
-    Platform::fillRect(0, 0, w, h, 0xDDFFFFFF);
-
-    Color text_color = 0xFF009999;
-
-    // TODO(Tejas): remove the hard coded values
-    Platform::renderFont(log_message, 180, 280, FontType::NORMAL, text_color);
-
-    G_logMessageCounter++;
-}
-
 void renderBoard(Board *board, VisualSetting &vs) {
 
     G_boardInfo.x_offset    = 0;
@@ -245,30 +228,53 @@ void renderBoard(Board *board, VisualSetting &vs) {
     // }
 
     if (vs.paused_control) {
-        int w, h;
-        Platform::getWindowDimention(&w, &h);
+
+        // TODO(Tejas): Maybe move this to the status bar.
+        int x, y, w, h;
+        Platform::getBoardDimention(&x, &y, &w, &h);
 
         // NOTE(Tejas): this is for a fog effect
-        Platform::fillRect(0, 0, w, h, 0xCCAAAAAA);
+        Platform::fillRect(x, y, w, h, 0xCCAAAAAA);
 
         Color text_color = 0xFF992222;
         // TODO(Tejas): remove the hard coded values
-        Platform::renderFont("Board Controls Paused", 180, 280, FontType::NORMAL, text_color);
+        int align_offset = 143;
+        Platform::renderFont("Board Controls Paused", (w / 2) - align_offset, (h / 2),
+                             FontType::NORMAL, text_color);
+    }
+}
+
+void renderStatusBar(StatusBar sb) {
+
+    int x, y, w, h;
+    Platform::getStatusBarDimention(&x, &y, &w, &h);
+    Platform::fillRect(x, y, w, h, 0xFF000000);
+
+    if (sb.mode != NULL) {
+        Color text_color = 0xFFFFFFFF;
+        int x_offset = 0;
+        Platform::renderFont(sb.mode, x + x_offset, y, FontType::SMALL, text_color);
     }
 
-    logMessage(vs.log_message);
-    if (G_logMessageCounter >= 100) {
-        G_logMessageCounter = 0;
-        vs.log_message = NULL;   
+    if (sb.turn != NULL) {
+        Color text_color = 0xFFFFFFFF;
+        int x_offset = 300;
+        Platform::renderFont(sb.turn, x + x_offset, y, FontType::SMALL, text_color);
+    }
+
+    if (sb.check) {
+        Color text_color = 0xFFFF0000;
+        int x_offset = 500;
+        Platform::renderFont("+", x + x_offset, y, FontType::SMALL, text_color);
     }
 }
 
 void renderWinner(Player player) {
 
-    int w, h;
-    Platform::getWindowDimention(&w, &h);
     // NOTE(Tejas): this is for a fog effect
-    Platform::fillRect(0, 0, w, h, 0xCCAAAAAA);
+    int x, y, w, h;
+    Platform::getBoardDimention(&x, &y, &w, &h);
+    Platform::fillRect(x, y, w, h, 0xCCAAAAAA);
 
     Color text_color = 0xFF000000;
 

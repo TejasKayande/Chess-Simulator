@@ -131,6 +131,8 @@ void present(void);
 void playSound(SoundType st);
 
 void getWindowDimention(int *w, int *h);
+void getBoardDimention(int *x, int *y, int *w, int *h);
+void getStatusBarDimention(int *x, int *y, int *w, int *h);
 
 int getFirstSetBit(u64 b);
 

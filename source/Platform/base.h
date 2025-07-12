@@ -35,7 +35,7 @@
 #endif
 
 // NOTE(Tejas): This is a flag to disable the console window on release build
-#define REMOVE_CONSOLE 1
+#define REMOVE_CONSOLE 0
 
 #define ARRAY_COUNT(x) (sizeof(x) / sizeof(*(x)))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

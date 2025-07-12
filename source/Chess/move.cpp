@@ -560,6 +560,10 @@ void Chess::clearMove(Move *move) {
 
 void Chess::undoMove(Board *board, Move move) {
 
+    // NOTE(Tejas): this is a very scuffed function. It should only be used
+    //              when you are sure that the move passed was the latest move
+    //              made on the board
+
     if (move.from == OFF_SQUARE || move.to == OFF_SQUARE) return;
 
     setPiece(board, move.from, move.piece);

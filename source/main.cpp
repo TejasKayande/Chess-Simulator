@@ -31,6 +31,7 @@ typedef GameState::GameMode GameMode;
 global GameState       G_gameState;
 global Platform::Event G_event;
 global VisualSetting   G_vs;
+global StatusBar       G_sb;
 
 global const ColorTheme NATURE_GREEN    = { 0xFF316548, 0xFFE9E9E6, 0xFF9999FF, 0xAA44FF44 };
 global const ColorTheme OCEAN_BLUE      = { 0xFF6666FF, 0xFFCCCCFF, 0xFFCCEEFF, 0xAA2299AA };
@@ -57,11 +58,6 @@ internal void resetGame(void) {
 
     G_gameState.white_check_counter = 0;
     G_gameState.black_check_counter = 0; 
-
-    if (G_gameState.game_mode == GameMode::NORMAL)           G_vs.log_message = "Playing Normal Mode";
-    if (G_gameState.game_mode == GameMode::THREE_CHECKS)     G_vs.log_message = "Playing Three Checks";
-    if (G_gameState.game_mode == GameMode::KING_OF_THE_HILL) G_vs.log_message = "Playing King of the Hill";
-    if (G_gameState.game_mode == GameMode::FOG_OF_WAR)       G_vs.log_message = "Playing Fog of War";
 }
 
 internal void makeMove(Chess::Square from, Chess::Square to) {
@@ -70,31 +66,30 @@ internal void makeMove(Chess::Square from, Chess::Square to) {
     move.from = from;
     move.to   = to;
 
-    if (move.from != Chess::OFF_SQUARE && move.to != Chess::OFF_SQUARE) {
+    if (move.from == Chess::OFF_SQUARE || move.to == Chess::OFF_SQUARE) return;
 
-        Chess::move(G_gameState.board, &move);
-        Chess::changeTurn(G_gameState.board);
+    Chess::move(G_gameState.board, &move);
+    Chess::changeTurn(G_gameState.board);
 
-        if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
-        if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
-        if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
+    if (move.type == MoveType::SIMPLE)  Platform::playSound(SoundType::MOVE);
+    if (move.type == MoveType::CAPTURE) Platform::playSound(SoundType::CAPTURE);
+    if (move.type == MoveType::CASTLE)  Platform::playSound(SoundType::CASTLE);
 
-        Chess::clearMove(&G_gameState.latest_move);
-        G_gameState.latest_move = move;
+    Chess::clearMove(&G_gameState.latest_move);
+    G_gameState.latest_move = move;
 
-        if (Chess::isInCheck(G_gameState.board, Chess::Player::WHITE) && G_gameState.board->turn == Chess::Player::WHITE) {
-            G_vs.is_white_in_check = true;
-            G_gameState.white_check_counter++;
-        } else {
-            G_vs.is_white_in_check = false;
-        }
+    if (Chess::isInCheck(G_gameState.board, Chess::Player::WHITE) && G_gameState.board->turn == Chess::Player::WHITE) {
+        G_vs.is_white_in_check = true;
+        G_gameState.white_check_counter++;
+    } else {
+        G_vs.is_white_in_check = false;
+    }
 
-        if (Chess::isInCheck(G_gameState.board, Chess::Player::BLACK) && G_gameState.board->turn == Chess::Player::BLACK) {
-            G_gameState.black_check_counter++;
-            G_vs.is_black_in_check = true;
-        } else {
-            G_vs.is_black_in_check = false;
-        }
+    if (Chess::isInCheck(G_gameState.board, Chess::Player::BLACK) && G_gameState.board->turn == Chess::Player::BLACK) {
+        G_gameState.black_check_counter++;
+        G_vs.is_black_in_check = true;
+    } else {
+        G_vs.is_black_in_check = false;
     }
 }
 
@@ -280,21 +275,25 @@ internal void handleMenuRequest() {
 
     case MenuRequest::PLAY_NORMAL: {
         G_gameState.game_mode = GameMode::NORMAL;
+        G_sb.mode = "Playing Normal Mode";
         resetGame();
     } break;
 
     case MenuRequest::PLAY_THREE_CHECKS : {
         G_gameState.game_mode = GameMode::THREE_CHECKS;
+        G_sb.mode = "Playing Three Checks";
         resetGame();
     } break;
 
     case MenuRequest::PLAY_KING_OF_THE_HILL: {
         G_gameState.game_mode = GameMode::KING_OF_THE_HILL;
+        G_sb.mode = "Playing King of the Hill Mode";
         resetGame();
     } break;
 
     case MenuRequest::PLAY_FOG_OF_WAR : {
         G_gameState.game_mode = GameMode::FOG_OF_WAR;
+        G_sb.mode = "Playing For of War Mode";
         resetGame();
     } break;
 
@@ -306,12 +305,13 @@ internal void handleMenuRequest() {
     case MenuRequest::KEYBINDS: {
         char* keybind_info =
             "KeyBinds\n"
-            "1. Flip Board (F) \n"
-            "2. Reset Board (X)\n"
-            "3. Hold \'1\' before promoting, to promote to Queen\n"
-            "4. Hold \'2\' before promoting, to promote to Rook\n"
-            "5. Hold \'3\' before promoting, to promote to Bishop\n"
-            "6. Hold \'4\' before promoting, to promote to Knight\n ";
+            "Flip Board (F) \n"
+            "Toggle Pause (ESC) \n"
+            "Reset Board (X)\n"
+            "Hold \'1\' before promoting, to promote to Queen\n"
+            "Hold \'2\' before promoting, to promote to Rook\n"
+            "Hold \'3\' before promoting, to promote to Bishop\n"
+            "Hold \'4\' before promoting, to promote to Knight\n ";
         Platform::information(keybind_info);
     } break;
 
@@ -336,7 +336,11 @@ internal void update() {
     // NOTE(Tejas): keyboard shortcuts are allowed if the controls are paused
     //              as they dont affect the game state (except for resetting the game)
     was_an_event |= handleKeyboard();
-    if (!G_gameState.pause_control) was_an_event |= handleMouse();
+
+    // NOTE(Tejas): resetting the selection if the player paused the game in the middle
+    //              of making a move.
+    if (!G_gameState.pause_control) was_an_event |= handleMouse();   
+    else G_vs.selected_square = Chess::OFF_SQUARE;
 
     if (was_an_event) {
 
@@ -366,9 +370,21 @@ internal void update() {
     G_vs.latest_move_from = G_gameState.latest_move.from;
     G_vs.latest_move_to   = G_gameState.latest_move.to;
     G_vs.paused_control   = G_gameState.pause_control;
+
+    G_sb.check = false;
+
+    if (G_gameState.board->turn == Chess::Player::WHITE) {
+        G_sb.turn = "Turn: W";   
+        if (G_vs.is_white_in_check) G_sb.check = true;
+    }
+    if (G_gameState.board->turn == Chess::Player::BLACK) {
+        G_sb.turn = "Turn: B"; 
+        if (G_vs.is_black_in_check) G_sb.check = true;
+    }
 }
 
 #if REMOVE_CONSOLE
+// NOTE(Tejas): program only supports Windows.
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #else
 int main(void) {
@@ -403,6 +419,10 @@ int main(void) {
     G_vs.latest_move_from = Chess::OFF_SQUARE;
     G_vs.latest_move_to   = Chess::OFF_SQUARE;
 
+    G_sb.mode = "Playing Normal Mode";
+    G_sb.check = false;
+
+
     char* STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk";
     Chess::setFen(G_gameState.board, STARTING_FEN);
 
@@ -414,8 +434,11 @@ int main(void) {
         Platform::clear();
 
         renderBoard(G_gameState.board, G_vs); 
+
         if (G_gameState.winner == Chess::Player::WHITE) renderWinner(Chess::Player::WHITE);
         if (G_gameState.winner == Chess::Player::BLACK) renderWinner(Chess::Player::BLACK);
+
+        renderStatusBar(G_sb);
 
         Platform::present();
     }
