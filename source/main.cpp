@@ -273,27 +273,27 @@ internal void handleMenuRequest() {
         G_vs.highlight_check = (G_vs.highlight_check) ? false : true;
     } break;
 
-    case MenuRequest::PLAY_NORMAL: {
+    case MenuRequest::PLAY_CLASSIC: {
         G_gameState.game_mode = GameMode::NORMAL;
-        G_sb.mode = "Playing Normal Mode";
+        G_sb.mode = "classic";
         resetGame();
     } break;
 
-    case MenuRequest::PLAY_THREE_CHECKS : {
+    case MenuRequest::PLAY_THREE_CHECKS: {
         G_gameState.game_mode = GameMode::THREE_CHECKS;
-        G_sb.mode = "Playing Three Checks";
+        G_sb.mode = "three checks";
         resetGame();
     } break;
 
     case MenuRequest::PLAY_KING_OF_THE_HILL: {
         G_gameState.game_mode = GameMode::KING_OF_THE_HILL;
-        G_sb.mode = "Playing King of the Hill Mode";
+        G_sb.mode = "king of the hill";
         resetGame();
     } break;
 
     case MenuRequest::PLAY_FOG_OF_WAR : {
         G_gameState.game_mode = GameMode::FOG_OF_WAR;
-        G_sb.mode = "Playing For of War Mode";
+        G_sb.mode = "for of war";
         resetGame();
     } break;
 
@@ -321,9 +321,6 @@ internal void handleMenuRequest() {
 }
 
 internal void update() {
-
-    G_vs.mousex = G_event.mouse.x;
-    G_vs.mousey = G_event.mouse.y;
 
     handleMenuRequest();
 
@@ -374,11 +371,11 @@ internal void update() {
     G_sb.check = false;
 
     if (G_gameState.board->turn == Chess::Player::WHITE) {
-        G_sb.turn = "Turn: W";   
+        G_sb.turn = "W";   
         if (G_vs.is_white_in_check) G_sb.check = true;
     }
     if (G_gameState.board->turn == Chess::Player::BLACK) {
-        G_sb.turn = "Turn: B"; 
+        G_sb.turn = "B"; 
         if (G_vs.is_black_in_check) G_sb.check = true;
     }
 }
@@ -419,9 +416,8 @@ int main(void) {
     G_vs.latest_move_from = Chess::OFF_SQUARE;
     G_vs.latest_move_to   = Chess::OFF_SQUARE;
 
-    G_sb.mode = "Playing Normal Mode";
+    G_sb.mode = "classic";
     G_sb.check = false;
-
 
     char* STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk";
     Chess::setFen(G_gameState.board, STARTING_FEN);

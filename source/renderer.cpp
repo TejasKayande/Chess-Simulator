@@ -81,13 +81,13 @@ internal void renderPieceOnSquare(Square square, Piece piece) {
                                 G_textures[piece.color - 1][piece.type - 1]);
 }
 
-internal void renderPieceOnMouse(int mousex, int mousey, Piece piece) {
+internal void renderPieceOnMouse(Piece piece) {
     
     int width  = (G_boardInfo.square_size * MAX_FILE) + G_boardInfo.x_offset;
     int height = (G_boardInfo.square_size * MAX_RANK) + G_boardInfo.y_offset;
 
-    int x = mousex;
-    int y = mousey;
+    int x = Platform::getMouseX();
+    int y = Platform::getMouseY();
 
     x = MIN(width  - (G_boardInfo.texture_dim / 2), x);
     y = MIN(height - (G_boardInfo.texture_dim / 2), y);
@@ -175,7 +175,6 @@ void renderBoard(Board *board, VisualSetting &vs) {
         renderFileCoord(Square{ 7, i });
     }
 
-    // rendering the pieces and 
     for (int rank = 0; rank < MAX_RANK; rank++) {
 
         for (int file = 0; file < MAX_FILE; file++) {
@@ -213,10 +212,12 @@ void renderBoard(Board *board, VisualSetting &vs) {
     // NOTE(Tejas): the selected piece follows the cursor around
     if (vs.selected_square != OFF_SQUARE) {
         Piece piece = getPieceAt(board, vs.selected_square);
-        renderPieceOnMouse(vs.mousex, vs.mousey, piece);
+        renderPieceOnMouse(piece);
     }
 
-    // BitBoard b = Chess::getAttackingSquares(board, board->turn);
+    // Chess::Player p = (board->turn == Chess::Player::WHITE) ?
+    //                   Chess::Player::BLACK : Chess::Player::WHITE;
+    // BitBoard b = Chess::getAttackingSquares(board, p);
 
     // for (int index = 0; index < 64; index++) {
 
@@ -237,9 +238,9 @@ void renderBoard(Board *board, VisualSetting &vs) {
         Platform::fillRect(x, y, w, h, 0xCCAAAAAA);
 
         Color text_color = 0xFF992222;
-        // TODO(Tejas): remove the hard coded values
         int align_offset = 143;
-        Platform::renderFont("Board Controls Paused", (w / 2) - align_offset, (h / 2),
+        Platform::renderFont("Board Controls Paused",
+                             (w / 2) - align_offset, (h / 2),
                              FontType::NORMAL, text_color);
     }
 }
@@ -250,23 +251,17 @@ void renderStatusBar(StatusBar sb) {
     Platform::getStatusBarDimention(&x, &y, &w, &h);
     Platform::fillRect(x, y, w, h, 0xFF000000);
 
-    if (sb.mode != NULL) {
-        Color text_color = 0xFFFFFFFF;
-        int x_offset = 0;
-        Platform::renderFont(sb.mode, x + x_offset, y, FontType::SMALL, text_color);
-    }
+    Color txt_color = 0xFFFFFFFF;
+    char status_bar_string[1024];
 
-    if (sb.turn != NULL) {
-        Color text_color = 0xFFFFFFFF;
-        int x_offset = 300;
-        Platform::renderFont(sb.turn, x + x_offset, y, FontType::SMALL, text_color);
-    }
+    char* check = "-";
 
     if (sb.check) {
-        Color text_color = 0xFFFF0000;
-        int x_offset = 500;
-        Platform::renderFont("+", x + x_offset, y, FontType::SMALL, text_color);
+        check = "+";
     }
+
+    sprintf_s(status_bar_string, sizeof(status_bar_string), "mode: %s | turn: %s | check: %s", sb.mode, sb.turn, check);
+    Platform::renderFont(status_bar_string, x, y, FontType::SMALL, txt_color);
 }
 
 void renderWinner(Player player) {

@@ -161,7 +161,7 @@ internal LRESULT WINAPI WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case MenuRequest::TOGGLE_LATEST_HIGHLIGHT:   G_menuRequest = MenuRequest::TOGGLE_LATEST_HIGHLIGHT;   break;
         case MenuRequest::TOGGLE_CHECK_HIGHLIGHT:    G_menuRequest = MenuRequest::TOGGLE_CHECK_HIGHLIGHT;    break;
 
-        case MenuRequest::PLAY_NORMAL:           G_menuRequest = MenuRequest::PLAY_NORMAL; break;
+        case MenuRequest::PLAY_CLASSIC:           G_menuRequest = MenuRequest::PLAY_CLASSIC; break;
         case MenuRequest::PLAY_THREE_CHECKS:     G_menuRequest = MenuRequest::PLAY_THREE_CHECKS; break;
         case MenuRequest::PLAY_KING_OF_THE_HILL: G_menuRequest = MenuRequest::PLAY_KING_OF_THE_HILL; break;
         case MenuRequest::PLAY_FOG_OF_WAR:       G_menuRequest = MenuRequest::PLAY_FOG_OF_WAR; break;
@@ -328,13 +328,13 @@ int Platform::init(void) {
         AppendMenu(view_menu , MF_POPUP , (UINT_PTR)theme_menu, "Theme");
 
         AppendMenu(view_menu, MF_SEPARATOR, 0, NULL);
-        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LEGAL_HIGHLIGHT   , "toggle highlighting legal moves");
-        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_SELECTED_HIGHLIGHT, "toggle highlighting selected square");
-        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LATEST_HIGHLIGHT  , "toggle highlighting latest move");
-        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_CHECK_HIGHLIGHT   , "toggle highlighting check");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LEGAL_HIGHLIGHT   , "Toggle Legal Moves Highlight");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_SELECTED_HIGHLIGHT, "Toggle Selected Square Highlight");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_LATEST_HIGHLIGHT  , "Toggle Latest Move Highlight");
+        AppendMenu(view_menu, MF_STRING, MenuRequest::TOGGLE_CHECK_HIGHLIGHT   , "Toggle Check Highlight");
 
         // variants menu
-        AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_NORMAL          , "Normal Mode");
+        AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_CLASSIC         , "Classic");
         AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_THREE_CHECKS    , "Three Checks");
         AppendMenu(variants_menu, MF_STRING  , MenuRequest::PLAY_KING_OF_THE_HILL, "King of the Hill");
         AppendMenu(variants_menu, MF_DISABLED, MenuRequest::PLAY_FOG_OF_WAR      , "Fog of War");
@@ -490,11 +490,8 @@ void Platform::pollEvents(Event &event) {
         DispatchMessageA(&msg);
     }
 
-    // NOTE(Tejas): Networking inputs should not care if the 
-    //              window was active or not
     if (GetActiveWindow() != G_window.handle) return;
 
-    // NOTE(Tejas): clearing event every frame
     memset(&event, 0, sizeof(Event));
 
     // menu request
@@ -690,6 +687,24 @@ void Platform::getStatusBarDimention(int *x, int *y, int *w, int *h) {
     *y = G_wnd_distribution.status_y;
     *w = G_wnd_distribution.status_w;
     *h = G_wnd_distribution.status_h;
+}
+
+int Platform::getMouseX() {
+    
+    POINT mouse_point;
+    GetCursorPos(&mouse_point);
+    ScreenToClient(G_window.handle, &mouse_point);
+
+    return mouse_point.x;
+}
+
+int Platform::getMouseY() {
+    
+    POINT mouse_point;
+    GetCursorPos(&mouse_point);
+    ScreenToClient(G_window.handle, &mouse_point);
+
+    return mouse_point.y;
 }
 
 int Platform::getFirstSetBit(u64 b) {

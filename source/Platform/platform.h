@@ -101,7 +101,7 @@ struct Event {
         TOGGLE_CHECK_HIGHLIGHT    = 6060,
 
         // variants menu
-        PLAY_NORMAL           = 7010,
+        PLAY_CLASSIC          = 7010,
         PLAY_THREE_CHECKS     = 7020,
         PLAY_KING_OF_THE_HILL = 7030,
         PLAY_FOG_OF_WAR       = 7040,
@@ -133,6 +133,9 @@ void playSound(SoundType st);
 void getWindowDimention(int *w, int *h);
 void getBoardDimention(int *x, int *y, int *w, int *h);
 void getStatusBarDimention(int *x, int *y, int *w, int *h);
+
+int getMouseX();
+int getMouseY();
 
 int getFirstSetBit(u64 b);
 

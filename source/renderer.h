@@ -34,10 +34,6 @@ struct VisualSetting {
     Chess::Square latest_move_to;
 
     ColorTheme theme;           // The theme of the board
-
-    // mouse coords to draw the texture of selected piece
-    int mousex;
-    int mousey;
 };
 
 struct StatusBar {
