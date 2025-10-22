@@ -671,7 +671,11 @@ BitBoard Chess::getAttackingSquares(Board *board, Player player) {
 
 BitBoard Chess::getLegalSquares(Board *board, Square square, Piece piece) {
 
-    BitBoard legal = getValidSquares(board, square, piece) | getCastlingSquares(board, board->turn);
+    BitBoard legal = getValidSquares(board, square, piece);
+
+    if (piece.type == PType::KING) {
+        legal |= getCastlingSquares(board, board->turn);
+    }
 
     // filtering out the moves that put self king in check
     Square from   = square;

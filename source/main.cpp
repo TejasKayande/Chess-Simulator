@@ -121,7 +121,6 @@ internal bool handleMouse(void) {
         if (piece.color == G_gameState.board->turn) {
 
             G_vs.selected_square = clicked_square;
-
             G_vs.legal_squares = Chess::getLegalSquares(G_gameState.board, G_vs.selected_square, piece);
         }
 
