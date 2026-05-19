@@ -87,28 +87,6 @@ It was also an important stepping stone toward later projects involving:
 
 ---
 
-## Building the Project
-
-### Requirements
-
-- Windows
-- Visual Studio 2022 (recommended)
-- DirectX SDK / Windows SDK
-
-### Build Steps
-
-1. Clone the repository
-
-```bash
-git clone https://github.com/TejasKayande/Chess-Simulator.git
-```
-
-2. Open the `.sln` file in Visual Studio
-
-3. Build and run in `Debug` or `Release` mode
-
----
-
 ## Future Improvements
 
 - Chess AI using Minimax
@@ -134,18 +112,3 @@ This project was intentionally built closer to a lightweight game engine approac
 The goal was not just to make chess playable, but to understand how desktop rendering and game architecture work at a lower level.
 
 ---
-
-## Related Projects
-
-- Raytracer using compute shaders
-- Graphics programming experiments
-- Engine architecture prototypes
-
-You can find more projects on my GitHub profile:
-<YOUR_GITHUB_PROFILE>
-
----
-
-## License
-
-MIT License
